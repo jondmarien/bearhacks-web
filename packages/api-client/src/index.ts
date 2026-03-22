@@ -1,5 +1,2 @@
-/**
- * FastAPI-oriented fetch client with Bearer JWT (portal plan Task 3).
- * Implement createApiClient({ baseUrl, getAccessToken }) here.
- */
-export const apiClientPackageVersion = "0.1.0";
+export { createApiClient, type CreateApiClientOptions, type GetAccessToken } from "./client";
+export { ApiError, type FastApiDetail } from "./errors";
