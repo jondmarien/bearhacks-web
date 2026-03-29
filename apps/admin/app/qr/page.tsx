@@ -21,6 +21,7 @@ type GeneratedQr = {
   url: string;
   printed: boolean;
   printer_error?: string;
+  printer_skipped?: boolean;
 };
 
 export default function AdminQrPage() {
@@ -31,6 +32,7 @@ export default function AdminQrPage() {
   const [claimedBySearch, setClaimedBySearch] = useState("");
   const [generateCount, setGenerateCount] = useState("5");
   const [generated, setGenerated] = useState<GeneratedQr[]>([]);
+  const [generateMode, setGenerateMode] = useState<"print" | "generate">("print");
 
   useEffect(() => {
     if (!supabase) return;
@@ -59,16 +61,20 @@ export default function AdminQrPage() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: async (count: number) =>
+    mutationFn: async ({ count, print }: { count: number; print: boolean }) =>
       client!.fetchJson<GeneratedQr[]>("/qr/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ count, print }),
       }),
-    onSuccess: (rows) => {
+    onSuccess: (rows, variables) => {
       setGenerated(rows);
       void qrQuery.refetch();
-      const failed = rows.filter((row) => !row.printed).length;
+      if (!variables.print) {
+        toast.success(`Generated ${rows.length} QR codes without printing.`);
+        return;
+      }
+      const failed = rows.filter((row) => !row.printed && !row.printer_skipped).length;
       if (failed > 0) {
         toast.warning(`Generated ${rows.length} QRs. ${failed} failed to print.`);
       } else {
@@ -142,7 +148,10 @@ export default function AdminQrPage() {
                   toast.error("Enter a positive count");
                   return;
                 }
-                generateMutation.mutate(parsed);
+                const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+                const mode = submitter?.dataset.mode === "generate" ? "generate" : "print";
+                setGenerateMode(mode);
+                generateMutation.mutate({ count: parsed, print: mode === "print" });
               }}
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -160,13 +169,24 @@ export default function AdminQrPage() {
                   className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={generateMutation.isPending}
-                className="min-h-(--bearhacks-touch-min) min-w-40 cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {generateMutation.isPending ? "Generating…" : "Generate + print"}
-              </button>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <button
+                  type="submit"
+                  data-mode="generate"
+                  disabled={generateMutation.isPending}
+                  className="min-h-(--bearhacks-touch-min) min-w-32 cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {generateMutation.isPending && generateMode === "generate" ? "Generating…" : "Generate"}
+                </button>
+                <button
+                  type="submit"
+                  data-mode="print"
+                  disabled={generateMutation.isPending}
+                  className="min-h-(--bearhacks-touch-min) min-w-40 cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {generateMutation.isPending && generateMode === "print" ? "Generating…" : "Generate + print"}
+                </button>
+              </div>
             </form>
             {generated.length > 0 && (
               <p className="mt-3 text-sm text-(--bearhacks-muted)">
