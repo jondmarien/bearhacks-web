@@ -15,11 +15,15 @@
   /* 2026 palette alignment from bearhacks-frontend/2026/tailwind.config.js */
   --bearhacks-dark-blue: #1d3264;
   --bearhacks-medium-blue: #3766d4;
+  --bearhacks-light-blue: #f2f8ff;
   --bearhacks-brown-type: #512b10;
+  --bearhacks-red: #941b0c;
+  --bearhacks-orange: #f0a422;
+  --bearhacks-brown: #966b55;
   --bearhacks-yellow: #ffdc56;
   --bearhacks-link: #1d3264;
   --bearhacks-link-hover: #3766d4;
-  --bearhacks-focus-ring: #1a1a1a;
+  --bearhacks-focus-ring: #3766d4;
   --bearhacks-radius-sm: 0.375rem;
   --bearhacks-radius-md: 0.5rem;
   --bearhacks-text-base: 1rem;

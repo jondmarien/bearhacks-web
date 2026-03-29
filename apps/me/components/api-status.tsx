@@ -43,10 +43,10 @@ export function ApiStatus() {
 
   if (!envResult.ok) {
     return (
-      <p className="text-sm text-amber-800">
-        Set <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_*</code> in{" "}
-        <code className="rounded bg-amber-100 px-1">apps/me/.env.local</code> (see repo{" "}
-        <code className="rounded bg-amber-100 px-1">.env.example</code>).
+      <p className="text-sm text-(--bearhacks-brown-type)">
+        Set <code className="rounded bg-(--bearhacks-yellow)/40 px-1">NEXT_PUBLIC_*</code> in{" "}
+        <code className="rounded bg-(--bearhacks-yellow)/40 px-1">apps/me/.env.local</code> (see repo{" "}
+        <code className="rounded bg-(--bearhacks-yellow)/40 px-1">.env.example</code>).
       </p>
     );
   }
@@ -60,17 +60,17 @@ export function ApiStatus() {
   }
   if (q.isError) {
     return (
-      <p className="text-sm text-red-600">
+      <p className="text-sm text-(--bearhacks-brown-type)">
         API unreachable. Is FastAPI running at {env!.NEXT_PUBLIC_API_URL}?
       </p>
     );
   }
   return (
     <p className="text-sm text-(--bearhacks-muted)">
-      API: <code className="rounded bg-neutral-100 px-1">{q.data?.status ?? "ok"}</code>
+      API: <code className="rounded bg-(--bearhacks-border)/30 px-1">{q.data?.status ?? "ok"}</code>
       <button
         type="button"
-        className="ml-2 text-blue-600 underline"
+        className="ml-2 underline"
         onClick={() => {
           q.refetch().then(() => toast.success("Refreshed"));
         }}
