@@ -5,8 +5,10 @@ import { createLogger } from "@bearhacks/logger";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useMeAuth } from "@/app/providers";
+import { queuePendingScan } from "@/lib/pending-scans";
 import { useApiClient } from "@/lib/use-api-client";
 
 const log = createLogger("me/contact-page");
@@ -30,6 +32,7 @@ export default function ContactPage() {
   const validProfileId = isUuidLike(profileId);
   const auth = useMeAuth();
   const client = useApiClient();
+  const didTrackScanRef = useRef(false);
 
   const profileQuery = useQuery({
     queryKey: ["public-profile", profileId],
@@ -61,6 +64,25 @@ export default function ContactPage() {
       toast.error(error instanceof ApiError ? error.message : "Failed to update favourite");
     },
   });
+
+  useEffect(() => {
+    if (!validProfileId || !profileQuery.data) return;
+    if (didTrackScanRef.current) return;
+    didTrackScanRef.current = true;
+
+    if (!auth?.user) {
+      queuePendingScan(profileId);
+      return;
+    }
+
+    if (auth.user.id === profileId) return;
+
+    void client
+      ?.fetchJson<{ success: boolean }>(`/social/scan/${profileId}`, { method: "POST" })
+      .catch((error) => {
+        log.warn("Failed to auto-save scan from contact page", { profileId, error });
+      });
+  }, [auth?.user, client, profileId, profileQuery.data, validProfileId]);
 
   if (!profileId) {
     return (

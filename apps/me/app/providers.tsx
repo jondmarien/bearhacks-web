@@ -1,11 +1,13 @@
 "use client";
 
+import { ApiError, createApiClient } from "@bearhacks/api-client";
 import { tryPublicEnv } from "@bearhacks/config";
 import { createLogger } from "@bearhacks/logger";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createClient, type User, type SupabaseClient } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Toaster } from "sonner";
+import { readPendingScans, removePendingScansByProfileIds } from "@/lib/pending-scans";
 
 const log = createLogger("me/providers");
 const SupabaseContext = createContext<SupabaseClient | null>(null);
@@ -130,6 +132,49 @@ export function Providers({ children }: { children: React.ReactNode }) {
       throw error;
     }
   }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || !user) return;
+    const env = tryPublicEnv();
+    if (!env.ok) return;
+
+    const pending = readPendingScans().filter((item) => item.profileId !== user.id);
+    if (pending.length === 0) return;
+
+    let cancelled = false;
+    const api = createApiClient({
+      baseUrl: env.data.NEXT_PUBLIC_API_URL,
+      getAccessToken: async () => {
+        const { data } = await supabase.auth.getSession();
+        return data.session?.access_token ?? null;
+      },
+    });
+
+    void (async () => {
+      const succeeded: string[] = [];
+      for (const item of pending) {
+        if (cancelled) return;
+        try {
+          await api.fetchJson<{ success: boolean }>(`/social/scan/${item.profileId}`, { method: "POST" });
+          succeeded.push(item.profileId);
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) {
+            // Session likely expired; keep remaining local entries for next login.
+            break;
+          }
+          log.warn("Failed to sync pending local scan", { profileId: item.profileId, error });
+        }
+      }
+      if (succeeded.length > 0) {
+        removePendingScansByProfileIds(succeeded);
+        log.info("Synced pending local scans after auth", { count: succeeded.length });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, user]);
 
   return (
     <QueryClientProvider client={queryClient}>
