@@ -31,6 +31,8 @@ export default function AdminQrPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [claimedBySearch, setClaimedBySearch] = useState("");
   const [generateCount, setGenerateCount] = useState("5");
+  const [printCount, setPrintCount] = useState("5");
+  const [printIdsInput, setPrintIdsInput] = useState("");
   const [generated, setGenerated] = useState<GeneratedQr[]>([]);
   const [generateMode, setGenerateMode] = useState<"print" | "generate">("print");
 
@@ -107,6 +109,35 @@ export default function AdminQrPage() {
         toast.error(error.status === 403 ? "Admin role required" : error.message);
       } else {
         toast.error("Failed to reprint QR");
+      }
+    },
+  });
+
+  const printMutation = useMutation({
+    mutationFn: async ({ count, qrIds }: { count?: number; qrIds?: string[] }) =>
+      client!.fetchJson<GeneratedQr[]>("/qr/print", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count, qr_ids: qrIds }),
+      }),
+    onSuccess: (rows) => {
+      if (rows.length === 0) {
+        toast.info("No QR codes matched to print.");
+        return;
+      }
+      const failed = rows.filter((row) => !row.printed).length;
+      if (failed > 0) {
+        toast.warning(`Printed ${rows.length - failed}/${rows.length}. ${failed} failed.`);
+      } else {
+        toast.success(`Printed ${rows.length} QR code(s).`);
+      }
+      setGenerated(rows);
+    },
+    onError: (error) => {
+      if (error instanceof ApiError) {
+        toast.error(error.status === 403 ? "Admin role required" : error.message);
+      } else {
+        toast.error("Failed to print QR codes");
       }
     },
   });
@@ -193,6 +224,71 @@ export default function AdminQrPage() {
                 Latest batch: {generated.length} created, {generated.filter((row) => row.printed).length} printed.
               </p>
             )}
+          </section>
+
+          <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
+            <h2 className="text-base font-medium text-(--bearhacks-fg)">Print existing QR codes</h2>
+            <p className="mt-1 text-sm text-(--bearhacks-muted)">
+              Print one QR id, a comma-separated batch, or the first N unclaimed codes.
+            </p>
+            <form
+              className="mt-3 flex flex-col gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const ids = printIdsInput
+                  .split(",")
+                  .map((value) => value.trim())
+                  .filter(Boolean);
+                if (ids.length > 0) {
+                  printMutation.mutate({ qrIds: ids });
+                  return;
+                }
+                const parsed = Number.parseInt(printCount, 10);
+                if (!Number.isFinite(parsed) || parsed <= 0) {
+                  toast.error("Provide QR IDs or a positive print count");
+                  return;
+                }
+                printMutation.mutate({ count: parsed });
+              }}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="print-ids" className="text-sm font-medium text-(--bearhacks-fg)">
+                    QR ids (comma separated)
+                  </label>
+                  <input
+                    id="print-ids"
+                    value={printIdsInput}
+                    onChange={(event) => setPrintIdsInput(event.target.value)}
+                    className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
+                    placeholder="uuid-1, uuid-2"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="print-count" className="text-sm font-medium text-(--bearhacks-fg)">
+                    Or print first N unclaimed
+                  </label>
+                  <input
+                    id="print-count"
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={printCount}
+                    onChange={(event) => setPrintCount(event.target.value)}
+                    className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
+                  />
+                </div>
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={printMutation.isPending}
+                  className="min-h-(--bearhacks-touch-min) min-w-40 cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {printMutation.isPending ? "Printing…" : "Print"}
+                </button>
+              </div>
+            </form>
           </section>
 
           <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
