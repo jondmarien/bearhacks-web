@@ -588,6 +588,8 @@ export default function AdminQrPage() {
                       const generatedBy = row.generated_by?.trim()
                         ? row.generated_by
                         : "legacy/unknown";
+                      const deletingThisRow =
+                        deleteMutation.isPending && deleteMutation.variables === qrId;
                       return (
                         <tr key={qrId} className="border-b border-(--bearhacks-border) last:border-0">
                           <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{qrId}</td>
@@ -635,7 +637,7 @@ export default function AdminQrPage() {
                                 disabled={!canMutate || reprintMutation.isPending || deleteMutation.isPending}
                                 className="min-h-(--bearhacks-touch-min) min-w-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm text-red-700 underline disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                                {deletingThisRow ? "Deleting…" : "Delete"}
                               </button>
                             </div>
                           </td>
