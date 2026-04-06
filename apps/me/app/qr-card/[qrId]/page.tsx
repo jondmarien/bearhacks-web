@@ -1,6 +1,7 @@
 "use client";
 
 import { createLogger } from "@bearhacks/logger";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
@@ -61,7 +62,14 @@ export default function QrCardPage() {
       </p>
       <div className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
         <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border)">
-          <img src={qrImageUrl} alt="Networking QR code" className="h-auto w-full" />
+          <Image
+            src={qrImageUrl}
+            alt="Networking QR code"
+            width={280}
+            height={280}
+            className="h-auto w-full"
+            unoptimized
+          />
         </div>
         <p className="mt-3 text-xs break-all text-(--bearhacks-muted)">
           Target: <span className="font-medium">{claimUrl}</span>

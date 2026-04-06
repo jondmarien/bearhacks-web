@@ -123,7 +123,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const access = await checkPortalAccess(supabase);
     if (!access.allowed) {
       if (access.reason === "not_accepted") {
-        setEmailClaimOpen(true);
+        queueMicrotask(() => setEmailClaimOpen(true));
         return;
       }
       if (access.reason === "missing_email") {
@@ -134,7 +134,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-    setEmailClaimOpen(false);
+    queueMicrotask(() => setEmailClaimOpen(false));
     await trySyncDiscordGuild(supabase);
 
     const env = tryPublicEnv();
@@ -168,7 +168,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [supabase, user]);
 
   useEffect(() => {
-    void runPortalFlow();
+    queueMicrotask(() => {
+      void runPortalFlow();
+    });
   }, [runPortalFlow]);
 
   const handleEmailClaimSubmit = useCallback(

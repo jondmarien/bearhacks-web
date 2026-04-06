@@ -3,6 +3,7 @@
 import { ApiError } from "@bearhacks/api-client";
 import { createLogger } from "@bearhacks/logger";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -498,7 +499,14 @@ export default function DashboardPage() {
           <div className="mt-3 flex flex-col gap-3">
             <div className="w-full max-w-[220px] overflow-hidden rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border)">
               {/* QR image uses a lightweight public encoder endpoint for fallback mode only. */}
-              <img src={qrImageUrl} alt="Your networking QR code" className="h-auto w-full" />
+              <Image
+                src={qrImageUrl}
+                alt="Your networking QR code"
+                width={220}
+                height={220}
+                className="h-auto w-full"
+                unoptimized
+              />
             </div>
             <p className="text-xs break-all text-(--bearhacks-muted)">
               QR target: <span className="font-medium">{claimUrl}</span>
