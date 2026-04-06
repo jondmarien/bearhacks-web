@@ -6,7 +6,9 @@ import { createLogger } from "@bearhacks/logger";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createClient, type User, type SupabaseClient } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
+import { EmailClaimModal } from "@/components/email-claim-modal";
+import { checkPortalAccess, claimPortalEmail } from "@/lib/check-portal-access";
 import { readPendingScans, removePendingScansByProfileIds } from "@/lib/pending-scans";
 import { trySyncDiscordGuild } from "@/lib/sync-discord-guild";
 
@@ -59,6 +61,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [emailClaimOpen, setEmailClaimOpen] = useState(false);
 
   useEffect(() => {
     const parsed = tryPublicEnv();
@@ -115,10 +118,74 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
   }, [supabase]);
 
-  useEffect(() => {
+  const runPortalFlow = useCallback(async () => {
     if (!supabase || !user) return;
-    void trySyncDiscordGuild(supabase);
+    const access = await checkPortalAccess(supabase);
+    if (!access.allowed) {
+      if (access.reason === "not_accepted") {
+        setEmailClaimOpen(true);
+        return;
+      }
+      if (access.reason === "missing_email") {
+        await supabase.auth.signOut();
+        toast.error(
+          "Discord did not share an email. Allow email access for the BearHacks app and try again.",
+        );
+      }
+      return;
+    }
+    setEmailClaimOpen(false);
+    await trySyncDiscordGuild(supabase);
+
+    const env = tryPublicEnv();
+    if (!env.ok) return;
+    const pending = readPendingScans().filter((item) => item.profileId !== user.id);
+    if (pending.length === 0) return;
+
+    const api = createApiClient({
+      baseUrl: env.data.NEXT_PUBLIC_API_URL,
+      getAccessToken: async () => {
+        const { data } = await supabase.auth.getSession();
+        return data.session?.access_token ?? null;
+      },
+    });
+    const succeeded: string[] = [];
+    for (const item of pending) {
+      try {
+        await api.fetchJson<{ success: boolean }>(`/social/scan/${item.profileId}`, { method: "POST" });
+        succeeded.push(item.profileId);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          break;
+        }
+        log.warn("Failed to sync pending local scan", { profileId: item.profileId, error });
+      }
+    }
+    if (succeeded.length > 0) {
+      removePendingScansByProfileIds(succeeded);
+      log.info("Synced pending local scans after auth", { count: succeeded.length });
+    }
   }, [supabase, user]);
+
+  useEffect(() => {
+    void runPortalFlow();
+  }, [runPortalFlow]);
+
+  const handleEmailClaimSubmit = useCallback(
+    async (email: string) => {
+      if (!supabase) return;
+      await claimPortalEmail(supabase, email);
+      toast.success("Email verified.");
+      await runPortalFlow();
+    },
+    [supabase, runPortalFlow],
+  );
+
+  const handleEmailClaimSignOut = useCallback(async () => {
+    setEmailClaimOpen(false);
+    if (!supabase) return;
+    await supabase.auth.signOut();
+  }, [supabase]);
 
   const signInWithDiscord = useCallback(async () => {
     if (!supabase) return;
@@ -145,54 +212,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
-  useEffect(() => {
-    if (!supabase || !user) return;
-    const env = tryPublicEnv();
-    if (!env.ok) return;
-
-    const pending = readPendingScans().filter((item) => item.profileId !== user.id);
-    if (pending.length === 0) return;
-
-    let cancelled = false;
-    const api = createApiClient({
-      baseUrl: env.data.NEXT_PUBLIC_API_URL,
-      getAccessToken: async () => {
-        const { data } = await supabase.auth.getSession();
-        return data.session?.access_token ?? null;
-      },
-    });
-
-    void (async () => {
-      const succeeded: string[] = [];
-      for (const item of pending) {
-        if (cancelled) return;
-        try {
-          await api.fetchJson<{ success: boolean }>(`/social/scan/${item.profileId}`, { method: "POST" });
-          succeeded.push(item.profileId);
-        } catch (error) {
-          if (error instanceof ApiError && error.status === 401) {
-            // Session likely expired; keep remaining local entries for next login.
-            break;
-          }
-          log.warn("Failed to sync pending local scan", { profileId: item.profileId, error });
-        }
-      }
-      if (succeeded.length > 0) {
-        removePendingScansByProfileIds(succeeded);
-        log.info("Synced pending local scans after auth", { count: succeeded.length });
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase, user]);
+  const discordEmailHint = user?.email?.trim() || null;
 
   return (
     <QueryClientProvider client={queryClient}>
       <SupabaseContext.Provider value={supabase}>
         <MeAuthContext.Provider value={{ user, isAuthReady, signInWithDiscord, signOut }}>
           {children}
+          <EmailClaimModal
+            open={emailClaimOpen && !!user}
+            discordEmailHint={discordEmailHint}
+            onSubmit={handleEmailClaimSubmit}
+            onSignOut={handleEmailClaimSignOut}
+          />
           <Toaster richColors position="top-center" />
         </MeAuthContext.Provider>
       </SupabaseContext.Provider>
