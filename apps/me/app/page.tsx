@@ -300,24 +300,26 @@ export default function HomePage() {
             Use this only to get verified and added to the official hackathon Discord server—not for day-to-day
             portal sync.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              void auth
-                .joinBearhacks2026WithDiscord()
-                .catch((error) => {
-                  log.error("Discord join flow failed", { error });
-                  if (error instanceof Error && error.message.toLowerCase().includes("provider is not enabled")) {
-                    toast.error("Discord is not enabled for this project in Supabase Auth.");
-                  } else {
-                    toast.error("Unable to start Discord");
-                  }
-                });
-            }}
-            className="mt-3 min-h-(--bearhacks-touch-min) w-full cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) sm:w-auto"
-          >
-            JOIN BEARHACKS 2026
-          </button>
+          <div className="mt-3 flex w-full justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                void auth
+                  .joinBearhacks2026WithDiscord()
+                  .catch((error) => {
+                    log.error("Discord join flow failed", { error });
+                    if (error instanceof Error && error.message.toLowerCase().includes("provider is not enabled")) {
+                      toast.error("Discord is not enabled for this project in Supabase Auth.");
+                    } else {
+                      toast.error("Unable to start Discord");
+                    }
+                  });
+              }}
+              className="min-h-(--bearhacks-touch-min) w-full max-w-sm cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) sm:w-auto"
+            >
+              JOIN BEARHACKS 2026
+            </button>
+          </div>
         </section>
 
         <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
