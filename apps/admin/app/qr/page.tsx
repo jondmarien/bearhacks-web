@@ -7,7 +7,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
-import { createStructuredLogger } from "@/lib/structured-logging";
+import {
+  createStructuredLogger,
+  readStructuredLogs,
+  type StructuredLogEntry,
+} from "@/lib/structured-logging";
 import { useApiClient } from "@/lib/use-api-client";
 import { isStaffUser } from "@/lib/supabase-role";
 
@@ -61,6 +65,8 @@ export default function AdminQrPage() {
   const [generated, setGenerated] = useState<GeneratedQr[]>([]);
   const [generateMode, setGenerateMode] = useState<"print" | "generate">("print");
   const [selectedQr, setSelectedQr] = useState<QrRow | null>(null);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
+  const [structuredLogs, setStructuredLogs] = useState<StructuredLogEntry[]>([]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -127,6 +133,11 @@ export default function AdminQrPage() {
     refetchInterval: 15000,
     refetchIntervalInBackground: true,
   });
+
+  useEffect(() => {
+    if (!isLogsOpen) return;
+    setStructuredLogs(readStructuredLogs(500));
+  }, [isLogsOpen]);
 
   const backfillGeneratedByMutation = useMutation({
     mutationFn: () =>
@@ -341,7 +352,25 @@ export default function AdminQrPage() {
       {isStaff && (
         <>
           <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
-            <h2 className="text-base font-medium text-(--bearhacks-fg)">Printer server status</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-medium text-(--bearhacks-fg)">Printer server status</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  log("info", {
+                    event: "admin_logs_modal",
+                    actor,
+                    resourceId: "admin_logs",
+                    result: "opened",
+                  });
+                  setStructuredLogs(readStructuredLogs(500));
+                  setIsLogsOpen(true);
+                }}
+                className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium"
+              >
+                Logs
+              </button>
+            </div>
             {printerStatusQuery.isLoading ? (
               <p className="mt-2 text-sm text-(--bearhacks-muted)">Checking printer server…</p>
             ) : printerStatusQuery.isError ? (
@@ -797,6 +826,110 @@ export default function AdminQrPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLogsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[85vh] w-full max-w-6xl overflow-hidden rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) shadow-xl">
+            <div className="flex items-center justify-between gap-3 border-b border-(--bearhacks-border) px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-(--bearhacks-fg)">Admin logs</h2>
+                <p className="text-xs text-(--bearhacks-muted)">
+                  Structured view of in-app admin dashboard events
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    log("debug", {
+                      event: "admin_logs_modal",
+                      actor,
+                      resourceId: "admin_logs",
+                      result: "refreshed",
+                    });
+                    setStructuredLogs(readStructuredLogs(500));
+                  }}
+                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium"
+                >
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    log("info", {
+                      event: "admin_logs_modal",
+                      actor,
+                      resourceId: "admin_logs",
+                      result: "closed",
+                    });
+                    setIsLogsOpen(false);
+                  }}
+                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm underline"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[calc(85vh-64px)] overflow-auto p-4">
+              {structuredLogs.length === 0 ? (
+                <p className="text-sm text-(--bearhacks-muted)">No logs returned.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border)">
+                  <table className="w-full min-w-[980px] border-collapse text-left text-xs">
+                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-border)/20">
+                      <tr>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Scope
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Event
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Actor
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Resource
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Result
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Level
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Timestamp
+                        </th>
+                        <th scope="col" className="px-3 py-2 font-medium">
+                          Metadata
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {structuredLogs.map((entry, index) => (
+                        <tr key={`${entry.event}-${index}`} className="border-b border-(--bearhacks-border) last:border-0">
+                          <td className="px-3 py-2 font-mono">{entry.scope}</td>
+                          <td className="px-3 py-2 font-mono">{entry.event}</td>
+                          <td className="px-3 py-2 font-mono">{entry.actor}</td>
+                          <td className="px-3 py-2 font-mono">{entry.resourceId}</td>
+                          <td className="px-3 py-2 font-mono">{entry.result}</td>
+                          <td className="px-3 py-2 font-mono">{entry.level}</td>
+                          <td className="px-3 py-2 font-mono">{entry.timestamp}</td>
+                          <td className="max-w-[480px] px-3 py-2 font-mono text-[11px] text-(--bearhacks-muted)">
+                            <span className="line-clamp-2 break-all">
+                              {JSON.stringify(entry.metadata)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
