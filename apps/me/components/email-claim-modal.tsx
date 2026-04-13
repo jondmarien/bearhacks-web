@@ -30,6 +30,7 @@ export function EmailClaimModal({
   const [pendingEmail, setPendingEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -38,7 +39,16 @@ export function EmailClaimModal({
     setOtpValue("");
     setPendingEmail("");
     setError(null);
+    setResendCooldownSeconds(0);
   }, [open]);
+
+  useEffect(() => {
+    if (resendCooldownSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendCooldownSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldownSeconds]);
 
   if (!open) return null;
 
@@ -61,6 +71,7 @@ export function EmailClaimModal({
       setPendingEmail(trimmed);
       setStep("otp");
       setOtpValue("");
+      setResendCooldownSeconds(45);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -89,10 +100,12 @@ export function EmailClaimModal({
 
   async function handleResendOtp() {
     if (!pendingEmail) return;
+    if (resendCooldownSeconds > 0) return;
     setError(null);
     setBusy(true);
     try {
       await requestOtp(pendingEmail);
+      setResendCooldownSeconds(45);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend code.");
     } finally {
@@ -198,11 +211,11 @@ export function EmailClaimModal({
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || resendCooldownSeconds > 0}
                   onClick={() => void handleResendOtp()}
                   className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-4 text-sm font-medium text-(--bearhacks-fg) disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Resend code
+                  {resendCooldownSeconds > 0 ? `Resend in ${resendCooldownSeconds}s` : "Resend code"}
                 </button>
                 <button
                   type="submit"

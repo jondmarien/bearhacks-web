@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useMeAuth } from "@/app/providers";
@@ -65,16 +66,6 @@ type WalletCapabilities = {
   fallback: { enabled: boolean };
 };
 
-function buildQrImageUrl(data: string, size = 512) {
-  const params = new URLSearchParams({
-    size: `${size}x${size}`,
-    data,
-    format: "png",
-    margin: "24",
-  });
-  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
-}
-
 export default function HomePage() {
   const auth = useMeAuth();
   const router = useRouter();
@@ -82,6 +73,7 @@ export default function HomePage() {
   const [scanId, setScanId] = useState("");
   const [favouriteId, setFavouriteId] = useState("");
   const [profileDraft, setProfileDraft] = useState<ProfileDraft | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
 
   const user = auth?.user ?? null;
   const userId = user?.id ?? null;
@@ -131,7 +123,7 @@ export default function HomePage() {
   const walletCapabilitiesQuery = useQuery({
     queryKey: ["wallet-capabilities"],
     queryFn: () => client!.fetchJson<WalletCapabilities>("/wallet/capabilities"),
-    enabled: Boolean(client),
+    enabled: Boolean(client && userId),
   });
 
   const profileUpdatePayload = useMemo(() => {
@@ -352,9 +344,33 @@ export default function HomePage() {
   const qrId = profileQuery.data?.qr_id ?? null;
   const claimUrl =
     typeof window !== "undefined" && qrId ? `${window.location.origin}/claim/${qrId}` : null;
-  const qrImageUrl = claimUrl ? buildQrImageUrl(claimUrl) : null;
   const qrCardHref = qrId ? `/qr-card/${qrId}` : null;
   const fallbackCardHref = qrCardHref ?? "/";
+
+  useEffect(() => {
+    let active = true;
+    if (!claimUrl) {
+      setQrImageUrl(null);
+      return () => {
+        active = false;
+      };
+    }
+    QRCode.toDataURL(claimUrl, {
+      width: 512,
+      margin: 2,
+      errorCorrectionLevel: "M",
+    })
+      .then((dataUrl) => {
+        if (active) setQrImageUrl(dataUrl);
+      })
+      .catch((error: unknown) => {
+        log.error("Failed to generate local QR image", { qrId, error });
+        if (active) setQrImageUrl(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [claimUrl, qrId]);
 
   const downloadFallbackPng = async () => {
     if (!qrImageUrl || !qrId) return;

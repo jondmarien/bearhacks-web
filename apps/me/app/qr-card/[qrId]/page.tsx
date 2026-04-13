@@ -4,23 +4,15 @@ import { createLogger } from "@bearhacks/logger";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import QRCode from "qrcode";
+import { useEffect, useMemo, useState } from "react";
 
 const log = createLogger("me/qr-card");
-
-function buildQrImageUrl(data: string, size = 768) {
-  const params = new URLSearchParams({
-    size: `${size}x${size}`,
-    data,
-    format: "png",
-    margin: "24",
-  });
-  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
-}
 
 export default function QrCardPage() {
   const params = useParams<{ qrId?: string }>();
   const searchParams = useSearchParams();
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const qrId = typeof params?.qrId === "string" ? params.qrId : "";
   const printMode = searchParams.get("print") === "1";
 
@@ -28,7 +20,31 @@ export default function QrCardPage() {
     if (!qrId || typeof window === "undefined") return null;
     return `${window.location.origin}/claim/${qrId}`;
   }, [qrId]);
-  const qrImageUrl = claimUrl ? buildQrImageUrl(claimUrl) : null;
+
+  useEffect(() => {
+    let active = true;
+    if (!claimUrl) {
+      setQrImageUrl(null);
+      return () => {
+        active = false;
+      };
+    }
+    QRCode.toDataURL(claimUrl, {
+      width: 768,
+      margin: 2,
+      errorCorrectionLevel: "M",
+    })
+      .then((dataUrl) => {
+        if (active) setQrImageUrl(dataUrl);
+      })
+      .catch((error: unknown) => {
+        log.error("Failed to generate local QR image", { qrId, error });
+        if (active) setQrImageUrl(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [claimUrl, qrId]);
 
   useEffect(() => {
     if (!printMode) return;
