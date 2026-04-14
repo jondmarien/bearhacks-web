@@ -13,6 +13,7 @@ export default function QrCardPage() {
   const params = useParams<{ qrId?: string }>();
   const searchParams = useSearchParams();
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [isQrImageLoaded, setIsQrImageLoaded] = useState(false);
   const qrId = typeof params?.qrId === "string" ? params.qrId : "";
   const printMode = searchParams.get("print") === "1";
 
@@ -26,6 +27,8 @@ export default function QrCardPage() {
     if (!claimUrl) return () => {
       active = false;
     };
+    setQrImageUrl(null);
+    setIsQrImageLoaded(false);
     QRCode.toDataURL(claimUrl, {
       width: 768,
       margin: 2,
@@ -44,18 +47,18 @@ export default function QrCardPage() {
   }, [claimUrl, qrId]);
 
   useEffect(() => {
-    if (!printMode) return;
+    if (!printMode || !qrImageUrl || !isQrImageLoaded) return;
     const timer = window.setTimeout(() => {
       try {
         window.print();
       } catch (error) {
         log.error("Failed to trigger print dialog", { error });
       }
-    }, 300);
+    }, 100);
     return () => window.clearTimeout(timer);
-  }, [printMode]);
+  }, [printMode, qrImageUrl, isQrImageLoaded]);
 
-  if (!qrId || !claimUrl || !qrImageUrl) {
+  if (!qrId || !claimUrl) {
     return (
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
         <h1 className="text-2xl font-semibold tracking-tight text-(--bearhacks-fg)">QR card</h1>
@@ -63,6 +66,15 @@ export default function QrCardPage() {
         <Link href="/" className="inline-flex min-h-(--bearhacks-touch-min) items-center underline">
           Back to portal
         </Link>
+      </main>
+    );
+  }
+
+  if (!qrImageUrl) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-(--bearhacks-fg)">BearHacks QR card</h1>
+        <p className="text-sm text-(--bearhacks-muted)">Generating your QR code...</p>
       </main>
     );
   }
@@ -82,6 +94,7 @@ export default function QrCardPage() {
             height={280}
             className="h-auto w-full"
             unoptimized
+            onLoad={() => setIsQrImageLoaded(true)}
           />
         </div>
         <p className="mt-3 text-xs break-all text-(--bearhacks-muted)">
