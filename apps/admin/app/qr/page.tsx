@@ -142,11 +142,6 @@ export default function AdminQrPage() {
     refetchIntervalInBackground: false,
   });
 
-  useEffect(() => {
-    if (!isLogsOpen) return;
-    setStructuredLogs(readStructuredLogs(500));
-  }, [isLogsOpen]);
-
   const backfillGeneratedByMutation = useMutation({
     mutationFn: () =>
       client!.fetchJson<{ updated_count: number; generated_by: string }>(
