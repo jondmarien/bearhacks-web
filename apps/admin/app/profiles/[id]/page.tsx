@@ -1,22 +1,22 @@
 "use client";
 
 /**
- * Super-admin profile editor (Linear DEV-22).
+ * Super-admin profile editor.
  *
  * Reads `GET /profiles/{id}` (public read today) and writes `PATCH /profiles/{id}` (super-admin only).
- *
- * TODO(DEV-17): Richer QR assignment UX should stay aligned with backend QR routes once DEV-17 ships
- *   (assignee: Yves — Linear DEV-17). This form intentionally omits direct QR editing.
  */
 
 import { ApiError, createApiClient } from "@bearhacks/api-client";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { InputField, TextareaField } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 import { useApiClient } from "@/lib/use-api-client";
 import { isSuperAdminUser } from "@/lib/supabase-role";
 
@@ -71,7 +71,7 @@ function ProfileEditForm({
     },
     onError: (err) => {
       if (err instanceof ApiError) {
-        toast.error(err.status === 403 ? "Super admin access required" : err.message);
+        toast.error(err.status === 403 ? "Super-admin access required." : err.message);
       } else {
         toast.error("Save failed");
       }
@@ -79,97 +79,72 @@ function ProfileEditForm({
   });
 
   return (
-    <form
-      className="flex flex-col gap-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        saveMutation.mutate();
-      }}
-    >
-      <p className="text-xs text-(--bearhacks-muted)">
-        Profile id <code className="rounded bg-(--bearhacks-border)/40 px-1">{profileId}</code>
-        {profile.qr_id && (
-          <>
-            {" "}
-            · QR <code className="rounded bg-(--bearhacks-border)/40 px-1">{profile.qr_id}</code>
-          </>
-        )}
-      </p>
+    <Card>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveMutation.mutate();
+        }}
+      >
+        <p className="text-xs text-(--bearhacks-muted)">
+          Profile id <code className="rounded bg-(--bearhacks-surface-alt) px-1">{profileId}</code>
+          {profile.qr_id && (
+            <>
+              {" "}
+              · QR <code className="rounded bg-(--bearhacks-surface-alt) px-1">{profile.qr_id}</code>
+            </>
+          )}
+        </p>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="display_name" className="text-sm font-medium text-(--bearhacks-fg)">
-          Display name
-        </label>
-        <input
+        <InputField
+          label="Display name"
           id="display_name"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
           autoComplete="name"
         />
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="bio" className="text-sm font-medium text-(--bearhacks-fg)">
-          Bio
-        </label>
-        <textarea
+        <TextareaField
+          label="Bio"
           id="bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           rows={4}
-          className="rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 py-2 text-base"
         />
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="linkedin_url" className="text-sm font-medium text-(--bearhacks-fg)">
-          LinkedIn URL
-        </label>
-        <input
+        <InputField
+          label="LinkedIn URL"
           id="linkedin_url"
           type="url"
           value={linkedinUrl}
           onChange={(e) => setLinkedinUrl(e.target.value)}
-          className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
           placeholder="https://"
         />
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="github_url" className="text-sm font-medium text-(--bearhacks-fg)">
-          GitHub URL
-        </label>
-        <input
+        <InputField
+          label="GitHub URL"
           id="github_url"
           type="url"
           value={githubUrl}
           onChange={(e) => setGithubUrl(e.target.value)}
-          className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
           placeholder="https://"
         />
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="role" className="text-sm font-medium text-(--bearhacks-fg)">
-          Role
-        </label>
-        <input
+        <InputField
+          label="Role"
           id="role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
         />
-      </div>
 
-      <button
-        type="submit"
-        disabled={saveMutation.isPending}
-        className="min-h-(--bearhacks-touch-min) w-full cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-      >
-        {saveMutation.isPending ? "Saving…" : "Save changes"}
-      </button>
-    </form>
+        <div>
+          <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
+            {saveMutation.isPending ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -210,14 +185,15 @@ export default function AdminProfileEditPage() {
 
   if (!isSuper) {
     return (
-      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-        <h1 className="text-xl font-semibold text-(--bearhacks-fg)">Edit profile</h1>
-        <p className="mt-2 text-sm text-(--bearhacks-muted)">
-          Super-admin JWT role required. The API will reject saves otherwise.
-        </p>
-        <Link href="/profiles" className="mt-6 inline-flex min-h-(--bearhacks-touch-min) items-center underline">
-          Back to list
-        </Link>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
+        <PageHeader title="Edit profile" backHref="/profiles" showBack />
+        <Card className="border-amber-200 bg-amber-50">
+          <CardTitle className="text-amber-900">Super-admin access required</CardTitle>
+          <CardDescription className="mt-1 text-amber-900">
+            Editing profiles is limited to super-admins. Ask a super-admin to grant
+            your account access, then sign out and back in.
+          </CardDescription>
+        </Card>
       </main>
     );
   }
@@ -228,16 +204,13 @@ export default function AdminProfileEditPage() {
       : null;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-(--bearhacks-fg)">Edit profile</h1>
-        <Link
-          href="/profiles"
-          className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center text-sm underline"
-        >
-          Back to list
-        </Link>
-      </div>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
+      <PageHeader
+        title="Edit profile"
+        subtitle="Update an attendee's display name, bio, links, and role."
+        backHref="/profiles"
+        showBack
+      />
 
       {profileQuery.isLoading && <p className="text-sm text-(--bearhacks-muted)">Loading…</p>}
       {profileQuery.error && (

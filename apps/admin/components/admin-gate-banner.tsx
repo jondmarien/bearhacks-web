@@ -4,14 +4,27 @@ import { createLogger } from "@bearhacks/logger";
 import { tryPublicEnv } from "@bearhacks/config";
 import type { User } from "@supabase/supabase-js";
 import { useSupabase } from "@/app/providers";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const log = createLogger("admin/auth-banner");
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  super_admin: "Super Admin",
+  hacker: "Hacker",
+  attendee: "Attendee",
+};
+
 function roleFromSession(user: User | null): string | undefined {
   const r = user?.app_metadata?.role;
   return typeof r === "string" ? r : undefined;
+}
+
+function formatRoleLabel(role: string | undefined): string {
+  if (!role) return "Unknown";
+  return ROLE_LABELS[role] ?? role.replace(/_/g, " ");
 }
 
 export function AdminGateBanner() {
@@ -39,8 +52,9 @@ export function AdminGateBanner() {
   if (!envResult.ok) {
     return (
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-950">
-        Set <code className="rounded bg-white/60 px-1">NEXT_PUBLIC_*</code> in{" "}
-        <code className="rounded bg-white/60 px-1">apps/admin/.env.local</code>.
+        Missing public environment configuration. Add the required
+        <code className="mx-1 rounded bg-white/60 px-1">NEXT_PUBLIC_*</code>
+        values to <code className="rounded bg-white/60 px-1">apps/admin/.env.local</code>.
       </div>
     );
   }
@@ -51,6 +65,7 @@ export function AdminGateBanner() {
 
   const isAdmin = role === "admin" || role === "super_admin";
   const signedInLabel = user?.email ?? user?.id ?? "";
+  const roleLabel = formatRoleLabel(role);
 
   async function signInWithDiscord() {
     if (!supabase) return;
@@ -64,9 +79,9 @@ export function AdminGateBanner() {
     if (error) {
       log.error("Discord sign in failed", { error });
       if (error.message.toLowerCase().includes("provider is not enabled")) {
-        toast.error("Discord auth provider is disabled in Supabase for this project.");
+        toast.error("Discord sign-in is currently disabled.");
       } else {
-        toast.error("Unable to start Discord login");
+        toast.error("Unable to start Discord sign-in.");
       }
     }
   }
@@ -84,53 +99,55 @@ export function AdminGateBanner() {
     toast.success("Signed out");
   }
 
-  return (
-    <div
-      className={`border-b px-4 py-2 text-sm ${
-        isAdmin ? "border-green-200 bg-green-50 text-green-900" : "border-amber-200 bg-amber-50 text-amber-950"
-      }`}
-    >
-      {isAdmin ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Signed in as <code className="rounded bg-white/60 px-1">{signedInLabel}</code> with role{" "}
-            <code className="rounded bg-white/60 px-1">{role}</code>. All admin actions are still enforced by the
-            FastAPI API.
-          </span>
-          <button
-            type="button"
+  if (!user) {
+    return (
+      <div className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface) px-4 py-3 text-sm text-(--bearhacks-fg)">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span>Sign in with your staff Discord account to access the admin tools.</span>
+          <Button
+            variant="primary"
             onClick={() => {
-              void signOut();
+              void signInWithDiscord();
             }}
             disabled={isBusy}
-            className="inline-flex min-h-(--bearhacks-touch-min) items-center underline disabled:opacity-60"
           >
-            Sign out
-          </button>
+            Sign in with Discord
+          </Button>
         </div>
-      ) : (
-        <div className="flex flex-col gap-2">
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`border-b px-4 py-3 text-sm ${
+        isAdmin
+          ? "border-green-200 bg-green-50 text-green-900"
+          : "border-amber-200 bg-amber-50 text-amber-950"
+      }`}
+    >
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {isAdmin ? (
           <span>
-            Not detected as admin in JWT <code className="rounded bg-white/60 px-1">app_metadata.role</code>. UI is
-            for convenience only — <strong>the API enforces admin</strong> on every protected route.
+            Signed in as <strong>{signedInLabel}</strong>. Role: {roleLabel}.
           </span>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              onClick={() => {
-                void signInWithDiscord();
-              }}
-              disabled={isBusy}
-              className="inline-flex min-h-(--bearhacks-touch-min) items-center underline disabled:opacity-60"
-            >
-              Sign in with Discord
-            </button>
-            <span className="text-xs text-amber-900/80">
-              Uses Supabase OAuth (redirects to provider auth page).
-            </span>
-          </div>
-        </div>
-      )}
+        ) : (
+          <span>
+            Signed in as <strong>{signedInLabel}</strong>. This account is not on
+            the admin list yet — ask a super-admin to add you, then sign out and
+            back in.
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            void signOut();
+          }}
+          disabled={isBusy}
+        >
+          Sign out
+        </Button>
+      </div>
     </div>
   );
 }

@@ -2,11 +2,14 @@
 
 import { ApiError } from "@bearhacks/api-client";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { InputField } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   createStructuredLogger,
   readStructuredLogs,
@@ -210,7 +213,7 @@ export default function AdminQrPage() {
         error,
       });
       if (error instanceof ApiError) {
-        toast.error(error.status === 403 ? "Admin role required" : error.message);
+        toast.error(error.status === 403 ? "Admin access required." : error.message);
       } else {
         toast.error("Failed to generate QR batch");
       }
@@ -245,7 +248,7 @@ export default function AdminQrPage() {
         error,
       });
       if (error instanceof ApiError) {
-        toast.error(error.status === 403 ? "Admin role required" : error.message);
+        toast.error(error.status === 403 ? "Admin access required." : error.message);
       } else {
         toast.error("Failed to reprint QR");
       }
@@ -289,7 +292,7 @@ export default function AdminQrPage() {
         error,
       });
       if (error instanceof ApiError) {
-        toast.error(error.status === 403 ? "Admin role required" : error.message);
+        toast.error(error.status === 403 ? "Admin access required." : error.message);
       } else {
         toast.error("Failed to print QR codes");
       }
@@ -320,7 +323,7 @@ export default function AdminQrPage() {
         error,
       });
       if (error instanceof ApiError) {
-        toast.error(error.status === 403 ? "Admin role required" : error.message);
+        toast.error(error.status === 403 ? "Admin access required." : error.message);
       } else {
         toast.error("Failed to delete QR");
       }
@@ -330,301 +333,291 @@ export default function AdminQrPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-(--bearhacks-fg)">QR Management</h1>
-          <p className="text-sm text-(--bearhacks-muted)">
-            Generate unclaimed QR batches, search claim status, and reprint labels for jam recovery.
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-sm) px-3 text-sm underline"
-        >
-          Admin home
-        </Link>
-      </header>
+        <PageHeader
+          title="QR fulfillment"
+          subtitle="Generate batches, search by claim status, reprint labels, and inspect details."
+          backHref="/"
+          showBack
+        />
 
-      {!isStaff && (
-        <section className="rounded-(--bearhacks-radius-md) border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-          Sign in with an admin account. The API enforces <code className="rounded bg-white/60 px-1">require_admin</code>{" "}
-          on all QR actions.
-        </section>
-      )}
+        {!isStaff && (
+          <Card className="border-amber-200 bg-amber-50 text-amber-950">
+            <CardTitle className="text-amber-900">Staff access required</CardTitle>
+            <CardDescription className="mt-1 text-amber-900">
+              Sign in with a staff account to use the QR tools. The API enforces
+              admin checks on every action regardless of UI state.
+            </CardDescription>
+          </Card>
+        )}
 
-      {isStaff && (
-        <>
-          <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-medium text-(--bearhacks-fg)">Printer server status</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void printerStatusQuery.refetch();
-                    log("info", {
-                      event: "admin_printer_status_refresh",
-                      actor,
-                      resourceId: "/qr/printer/status",
-                      result: "submitted",
-                    });
-                  }}
-                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium"
-                >
-                  Refresh
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    log("info", {
-                      event: "admin_logs_modal",
-                      actor,
-                      resourceId: "admin_logs",
-                      result: "opened",
-                    });
-                    setStructuredLogs(readStructuredLogs(500));
-                    setIsLogsOpen(true);
-                  }}
-                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium"
-                >
-                  Logs
-                </button>
+        {isStaff && (
+          <>
+            <Card>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Printer server status</CardTitle>
+                  <CardDescription className="mt-1">
+                    Live status of the on-site label printer.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      void printerStatusQuery.refetch();
+                      log("info", {
+                        event: "admin_printer_status_refresh",
+                        actor,
+                        resourceId: "/qr/printer/status",
+                        result: "submitted",
+                      });
+                    }}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      log("info", {
+                        event: "admin_logs_modal",
+                        actor,
+                        resourceId: "admin_logs",
+                        result: "opened",
+                      });
+                      setStructuredLogs(readStructuredLogs(500));
+                      setIsLogsOpen(true);
+                    }}
+                  >
+                    Logs
+                  </Button>
+                </div>
               </div>
-            </div>
-            {printerStatusQuery.isLoading ? (
-              <p className="mt-2 text-sm text-(--bearhacks-muted)">Checking printer server…</p>
-            ) : printerStatusQuery.isError ? (
-              <p className="mt-2 text-sm text-red-700">
-                {printerStatusQuery.error instanceof ApiError
-                  ? printerStatusQuery.error.message
-                  : "Failed to load printer status"}
-              </p>
-            ) : printerStatusQuery.data ? (
-              <div className="mt-2 flex flex-col gap-1 text-sm">
-                <p className="flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${
-                      !printerStatusQuery.data.online || printerStatusQuery.data.state === "down"
-                        ? "bg-red-500"
-                        : printerStatusQuery.data.state === "printing"
-                          ? "bg-amber-500"
-                          : printerStatusQuery.data.state === "stale"
-                            ? "bg-orange-500"
-                            : printerStatusQuery.data.state === "stuck"
-                              ? "bg-rose-500"
-                              : printerStatusQuery.data.state === "idle"
-                                ? "bg-emerald-500"
-                                : "bg-sky-500"
-                    }`}
-                  />
-                  <span className="font-medium">
-                    {printerStatusQuery.data.online && printerStatusQuery.data.state !== "down"
-                      ? "Online"
-                      : "DOWN"}{" "}
-                    - {printerStatusQuery.data.state}
-                  </span>
+              {printerStatusQuery.isLoading ? (
+                <p className="mt-3 text-sm text-(--bearhacks-muted)">Checking printer server…</p>
+              ) : printerStatusQuery.isError ? (
+                <p className="mt-3 text-sm text-red-700">
+                  {printerStatusQuery.error instanceof ApiError
+                    ? printerStatusQuery.error.message
+                    : "Failed to load printer status"}
                 </p>
-                {!printerStatusQuery.data.online || printerStatusQuery.data.state === "down" ? (
-                  <p className="text-(--bearhacks-muted)">
-                    {printerStatusQuery.data.error ?? "Printer is unreachable right now."}
+              ) : printerStatusQuery.data ? (
+                <div className="mt-3 flex flex-col gap-1 text-sm">
+                  <p className="flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-2.5 w-2.5 rounded-full ${
+                        !printerStatusQuery.data.online || printerStatusQuery.data.state === "down"
+                          ? "bg-red-500"
+                          : printerStatusQuery.data.state === "printing"
+                            ? "bg-amber-500"
+                            : printerStatusQuery.data.state === "stale"
+                              ? "bg-orange-500"
+                              : printerStatusQuery.data.state === "stuck"
+                                ? "bg-rose-500"
+                                : printerStatusQuery.data.state === "idle"
+                                  ? "bg-emerald-500"
+                                  : "bg-sky-500"
+                      }`}
+                    />
+                    <span className="font-medium">
+                      {printerStatusQuery.data.online && printerStatusQuery.data.state !== "down"
+                        ? "Online"
+                        : "DOWN"}{" "}
+                      — {printerStatusQuery.data.state}
+                    </span>
                   </p>
-                ) : null}
-                <p className="text-(--bearhacks-muted)">
-                  Last checked: {new Date(printerStatusQuery.data.checked_at).toLocaleTimeString()}
-                </p>
-                {typeof printerStatusQuery.data.activity_age_seconds === "number" ? (
+                  {!printerStatusQuery.data.online || printerStatusQuery.data.state === "down" ? (
+                    <p className="text-(--bearhacks-muted)">
+                      {printerStatusQuery.data.error ?? "Printer is unreachable right now."}
+                    </p>
+                  ) : null}
                   <p className="text-(--bearhacks-muted)">
-                    Last activity: {printerStatusQuery.data.activity_age_seconds}s ago
+                    Last checked: {new Date(printerStatusQuery.data.checked_at).toLocaleTimeString()}
                   </p>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
+                  {typeof printerStatusQuery.data.activity_age_seconds === "number" ? (
+                    <p className="text-(--bearhacks-muted)">
+                      Last activity: {printerStatusQuery.data.activity_age_seconds}s ago
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </Card>
 
-          <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
-            <h2 className="text-base font-medium text-(--bearhacks-fg)">Generate batch</h2>
-            <form
-              className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const parsed = Number.parseInt(generateCount, 10);
-                if (!Number.isFinite(parsed) || parsed <= 0) {
-                  log("warn", {
+            <Card>
+              <CardTitle>Generate batch</CardTitle>
+              <CardDescription className="mt-1">
+                Create a new run of unclaimed QR codes; optionally print them in the
+                same step.
+              </CardDescription>
+              <form
+                className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const parsed = Number.parseInt(generateCount, 10);
+                  if (!Number.isFinite(parsed) || parsed <= 0) {
+                    log("warn", {
+                      event: "admin_qr_generate_submit",
+                      actor,
+                      resourceId: "/qr/generate",
+                      result: "invalid_count",
+                      input: generateCount,
+                    });
+                    toast.error("Enter a positive count");
+                    return;
+                  }
+                  const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+                  const mode = submitter?.dataset.mode === "generate" ? "generate" : "print";
+                  log("info", {
                     event: "admin_qr_generate_submit",
                     actor,
                     resourceId: "/qr/generate",
-                    result: "invalid_count",
-                    input: generateCount,
+                    result: "submitted",
+                    mode,
+                    count: parsed,
                   });
-                  toast.error("Enter a positive count");
-                  return;
-                }
-                const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-                const mode = submitter?.dataset.mode === "generate" ? "generate" : "print";
-                log("info", {
-                  event: "admin_qr_generate_submit",
-                  actor,
-                  resourceId: "/qr/generate",
-                  result: "submitted",
-                  mode,
-                  count: parsed,
-                });
-                setGenerateMode(mode);
-                generateMutation.mutate({ count: parsed, print: mode === "print" });
-              }}
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label htmlFor="generate-count" className="text-sm font-medium text-(--bearhacks-fg)">
-                  QR count
-                </label>
-                <input
-                  id="generate-count"
-                  name="count"
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={generateCount}
-                  onChange={(event) => setGenerateCount(event.target.value)}
-                  className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
-                />
-              </div>
-              <div className="flex w-full gap-2 sm:w-auto">
-                <button
-                  type="submit"
-                  data-mode="generate"
-                  disabled={generateMutation.isPending}
-                  className="min-h-(--bearhacks-touch-min) min-w-32 cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {generateMutation.isPending && generateMode === "generate" ? "Generating…" : "Generate"}
-                </button>
-                <button
-                  type="submit"
-                  data-mode="print"
-                  disabled={generateMutation.isPending}
-                  className="min-h-(--bearhacks-touch-min) min-w-40 cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg) disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {generateMutation.isPending && generateMode === "print" ? "Generating…" : "Generate + print"}
-                </button>
-              </div>
-            </form>
-            {generated.length > 0 && (
-              <p className="mt-3 text-sm text-(--bearhacks-muted)">
-                Latest batch: {generated.length} created, {generated.filter((row) => row.printed).length} printed.
-              </p>
-            )}
-          </section>
+                  setGenerateMode(mode);
+                  generateMutation.mutate({ count: parsed, print: mode === "print" });
+                }}
+              >
+                <div className="min-w-0 flex-1">
+                  <InputField
+                    label="QR count"
+                    id="generate-count"
+                    name="count"
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={generateCount}
+                    onChange={(event) => setGenerateCount(event.target.value)}
+                  />
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    data-mode="generate"
+                    disabled={generateMutation.isPending}
+                  >
+                    {generateMutation.isPending && generateMode === "generate" ? "Generating…" : "Generate"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    data-mode="print"
+                    disabled={generateMutation.isPending}
+                  >
+                    {generateMutation.isPending && generateMode === "print" ? "Generating…" : "Generate + print"}
+                  </Button>
+                </div>
+              </form>
+              {generated.length > 0 && (
+                <p className="mt-3 text-sm text-(--bearhacks-muted)">
+                  Latest batch: {generated.length} created, {generated.filter((row) => row.printed).length} printed.
+                </p>
+              )}
+            </Card>
 
-          <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
-            <h2 className="text-base font-medium text-(--bearhacks-fg)">Print existing QR codes</h2>
-            <p className="mt-1 text-sm text-(--bearhacks-muted)">
-              Print one QR id, a comma-separated batch, or the first N unclaimed codes.
-            </p>
-            <form
-              className="mt-3 flex flex-col gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const ids = printIdsInput
-                  .split(",")
-                  .map((value) => value.trim())
-                  .filter(Boolean);
-                if (ids.length > 0) {
+            <Card>
+              <CardTitle>Print existing QR codes</CardTitle>
+              <CardDescription className="mt-1">
+                Print one QR id, a comma-separated batch, or the first N unclaimed
+                codes.
+              </CardDescription>
+              <form
+                className="mt-4 flex flex-col gap-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const ids = printIdsInput
+                    .split(",")
+                    .map((value) => value.trim())
+                    .filter(Boolean);
+                  if (ids.length > 0) {
+                    log("info", {
+                      event: "admin_qr_print_submit",
+                      actor,
+                      resourceId: "/qr/print",
+                      result: "submitted_by_ids",
+                      idCount: ids.length,
+                    });
+                    printMutation.mutate({ qrIds: ids });
+                    return;
+                  }
+                  const parsed = Number.parseInt(printCount, 10);
+                  if (!Number.isFinite(parsed) || parsed <= 0) {
+                    log("warn", {
+                      event: "admin_qr_print_submit",
+                      actor,
+                      resourceId: "/qr/print",
+                      result: "invalid_input",
+                      input: printCount,
+                    });
+                    toast.error("Provide QR IDs or a positive print count");
+                    return;
+                  }
                   log("info", {
                     event: "admin_qr_print_submit",
                     actor,
                     resourceId: "/qr/print",
-                    result: "submitted_by_ids",
-                    idCount: ids.length,
+                    result: "submitted_by_count",
+                    count: parsed,
                   });
-                  printMutation.mutate({ qrIds: ids });
-                  return;
-                }
-                const parsed = Number.parseInt(printCount, 10);
-                if (!Number.isFinite(parsed) || parsed <= 0) {
-                  log("warn", {
-                    event: "admin_qr_print_submit",
-                    actor,
-                    resourceId: "/qr/print",
-                    result: "invalid_input",
-                    input: printCount,
-                  });
-                  toast.error("Provide QR IDs or a positive print count");
-                  return;
-                }
-                log("info", {
-                  event: "admin_qr_print_submit",
-                  actor,
-                  resourceId: "/qr/print",
-                  result: "submitted_by_count",
-                  count: parsed,
-                });
-                printMutation.mutate({ count: parsed });
-              }}
-            >
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="print-ids" className="text-sm font-medium text-(--bearhacks-fg)">
-                    QR ids (comma separated)
-                  </label>
-                  <input
+                  printMutation.mutate({ count: parsed });
+                }}
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InputField
+                    label="QR ids (comma separated)"
                     id="print-ids"
                     value={printIdsInput}
                     onChange={(event) => setPrintIdsInput(event.target.value)}
-                    className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
                     placeholder="uuid-1, uuid-2"
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="print-count" className="text-sm font-medium text-(--bearhacks-fg)">
-                    Or print first N unclaimed
-                  </label>
-                  <input
+                  <InputField
+                    label="Or print first N unclaimed"
                     id="print-count"
                     type="number"
                     min={1}
                     max={200}
                     value={printCount}
                     onChange={(event) => setPrintCount(event.target.value)}
-                    className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
                   />
                 </div>
-              </div>
-              <div>
-                <button
-                  type="submit"
-                  disabled={printMutation.isPending}
-                  className="min-h-(--bearhacks-touch-min) min-w-40 cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {printMutation.isPending ? "Printing…" : "Print"}
-                </button>
-              </div>
-            </form>
-          </section>
+                <div>
+                  <Button type="submit" variant="primary" disabled={printMutation.isPending}>
+                    {printMutation.isPending ? "Printing…" : "Print"}
+                  </Button>
+                </div>
+              </form>
+            </Card>
 
-          <section className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4">
-            <h2 className="text-base font-medium text-(--bearhacks-fg)">Search by claim status</h2>
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  log("info", {
-                    event: "admin_generated_by_backfill",
-                    actor,
-                    resourceId: "/qr/generated-by/backfill",
-                    result: "submitted",
-                  });
-                  backfillGeneratedByMutation.mutate();
-                }}
-                disabled={backfillGeneratedByMutation.isPending}
-                className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {backfillGeneratedByMutation.isPending ? "Backfilling…" : "Backfill legacy generated_by"}
-              </button>
-            </div>
-            <form
-              className="mt-3 grid gap-3 sm:grid-cols-3"
-              onSubmit={(event) => {
-                event.preventDefault();
+            <Card>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Search by claim status</CardTitle>
+                  <CardDescription className="mt-1">
+                    Filter the QR pool by claim state and inspect or reprint individual codes.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    log("info", {
+                      event: "admin_generated_by_backfill",
+                      actor,
+                      resourceId: "/qr/generated-by/backfill",
+                      result: "submitted",
+                    });
+                    backfillGeneratedByMutation.mutate();
+                  }}
+                  disabled={backfillGeneratedByMutation.isPending}
+                >
+                  {backfillGeneratedByMutation.isPending ? "Backfilling…" : "Backfill legacy generated_by"}
+                </Button>
+              </div>
+              <form
+                className="mt-4 grid gap-3 sm:grid-cols-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
                   log("info", {
                     event: "admin_qr_search",
                     actor,
@@ -633,178 +626,179 @@ export default function AdminQrPage() {
                     statusFilter,
                     claimedByProvided: Boolean(claimedBySearch.trim()),
                   });
-                void qrQuery.refetch();
-              }}
-            >
-              <div className="flex flex-col gap-1">
-                <label htmlFor="status-filter" className="text-sm font-medium text-(--bearhacks-fg)">
-                  Status
-                </label>
-                <select
-                  id="status-filter"
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(event.target.value as "all" | "claimed" | "unclaimed")
-                  }
-                  className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
-                >
-                  <option value="all">All</option>
-                  <option value="claimed">Claimed</option>
-                  <option value="unclaimed">Unclaimed</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1 sm:col-span-2">
-                <label htmlFor="claimed-by" className="text-sm font-medium text-(--bearhacks-fg)">
-                  Claimed by (profile id, optional)
-                </label>
-                <input
-                  id="claimed-by"
-                  value={claimedBySearch}
-                  onChange={(event) => setClaimedBySearch(event.target.value)}
-                  className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base"
-                  placeholder="Filter specific claimer id"
-                />
-              </div>
-            </form>
+                  void qrQuery.refetch();
+                }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="status-filter"
+                    className="text-sm font-medium text-(--bearhacks-primary)"
+                  >
+                    Status
+                  </label>
+                  <select
+                    id="status-filter"
+                    value={statusFilter}
+                    onChange={(event) =>
+                      setStatusFilter(event.target.value as "all" | "claimed" | "unclaimed")
+                    }
+                    className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface) px-3 text-base text-(--bearhacks-fg) focus:border-(--bearhacks-primary) focus:outline-none"
+                  >
+                    <option value="all">All</option>
+                    <option value="claimed">Claimed</option>
+                    <option value="unclaimed">Unclaimed</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <InputField
+                    label="Claimed by (profile id, optional)"
+                    id="claimed-by"
+                    value={claimedBySearch}
+                    onChange={(event) => setClaimedBySearch(event.target.value)}
+                    placeholder="Filter specific claimer id"
+                  />
+                </div>
+              </form>
 
-            {qrQuery.isLoading && <p className="mt-3 text-sm text-(--bearhacks-muted)">Loading QR list…</p>}
-            {qrQuery.isError && (
-              <p className="mt-3 text-sm text-red-700">
-                {qrQuery.error instanceof ApiError ? qrQuery.error.message : "Failed to load QR list"}
-              </p>
-            )}
-            {qrQuery.data && (
-              <div className="mt-3 overflow-x-auto rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border)">
-                <table className="w-full min-w-xl border-collapse text-left text-sm">
-                  <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-border)/20">
-                    <tr>
-                      <th scope="col" className="px-3 py-3 font-medium">
-                        QR id
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium">
-                        Generated by
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium">
-                        Status
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium">
-                        Claimed by
-                      </th>
-                      <th scope="col" className="px-3 py-3 text-center font-medium">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {qrQuery.data.map((row) => {
-                      const qrId = row.id ?? "unknown";
-                      const canMutate = Boolean(row.id);
-                      const claimed = Boolean(row.claimed);
-                      const generatedBy = row.generated_by?.trim()
-                        ? row.generated_by
-                        : "legacy/unknown";
-                      const deletingThisRow =
-                        deleteMutation.isPending && deleteMutation.variables === qrId;
-                      return (
-                        <tr key={qrId} className="border-b border-(--bearhacks-border) last:border-0">
-                          <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{qrId}</td>
-                          <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{generatedBy}</td>
-                          <td className="px-3 py-3">
-                            <span
-                              className={`inline-flex rounded-full px-2 py-1 text-xs ${
-                                claimed
-                                  ? "bg-(--bearhacks-fg) text-(--bearhacks-bg)"
-                                  : "bg-(--bearhacks-border)/40 text-(--bearhacks-muted)"
-                              }`}
-                            >
-                              {claimed ? "Claimed" : "Unclaimed"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-(--bearhacks-muted)">{row.claimed_by ?? "—"}</td>
-                          <td className="px-3 py-3 text-center">
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  log("info", {
-                                    event: "admin_qr_view",
-                                    actor,
-                                    resourceId: qrId,
-                                    result: "opened",
-                                  });
-                                  setSelectedQr(row);
-                                }}
-                                disabled={!canMutate}
-                                className="min-h-(--bearhacks-touch-min) min-w-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm underline disabled:cursor-not-allowed disabled:opacity-60"
+              {qrQuery.isLoading && <p className="mt-3 text-sm text-(--bearhacks-muted)">Loading QR list…</p>}
+              {qrQuery.isError && (
+                <p className="mt-3 text-sm text-red-700">
+                  {qrQuery.error instanceof ApiError ? qrQuery.error.message : "Failed to load QR list"}
+                </p>
+              )}
+              {qrQuery.data && (
+                <div className="mt-4 overflow-x-auto rounded-(--bearhacks-radius-md) border border-(--bearhacks-border)">
+                  <table className="w-full min-w-xl border-collapse text-left text-sm">
+                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
+                      <tr>
+                        <th scope="col" className="px-3 py-3 font-medium">
+                          QR id
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium">
+                          Generated by
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium">
+                          Status
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium">
+                          Claimed by
+                        </th>
+                        <th scope="col" className="px-3 py-3 text-center font-medium">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {qrQuery.data.map((row) => {
+                        const qrId = row.id ?? "unknown";
+                        const canMutate = Boolean(row.id);
+                        const claimed = Boolean(row.claimed);
+                        const generatedBy = row.generated_by?.trim()
+                          ? row.generated_by
+                          : "legacy/unknown";
+                        const deletingThisRow =
+                          deleteMutation.isPending && deleteMutation.variables === qrId;
+                        return (
+                          <tr key={qrId} className="border-b border-(--bearhacks-border) last:border-0">
+                            <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{qrId}</td>
+                            <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{generatedBy}</td>
+                            <td className="px-3 py-3">
+                              <span
+                                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                  claimed
+                                    ? "bg-(--bearhacks-primary) text-(--bearhacks-on-primary)"
+                                    : "bg-(--bearhacks-border)/40 text-(--bearhacks-muted)"
+                                }`}
                               >
-                                View
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  log("info", {
-                                    event: "admin_qr_reprint",
-                                    actor,
-                                    resourceId: qrId,
-                                    result: "submitted",
-                                  });
-                                  reprintMutation.mutate(qrId);
-                                }}
-                                disabled={!canMutate || reprintMutation.isPending || deleteMutation.isPending}
-                                className="min-h-(--bearhacks-touch-min) min-w-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm underline disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Reprint
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!canMutate) return;
-                                  const confirmed = window.confirm(
-                                    `Delete QR ${qrId}? This permanently removes it from the database.`,
-                                  );
-                                  if (!confirmed) {
+                                {claimed ? "Claimed" : "Unclaimed"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-(--bearhacks-muted)">{row.claimed_by ?? "—"}</td>
+                            <td className="px-3 py-3 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => {
+                                    log("info", {
+                                      event: "admin_qr_view",
+                                      actor,
+                                      resourceId: qrId,
+                                      result: "opened",
+                                    });
+                                    setSelectedQr(row);
+                                  }}
+                                  disabled={!canMutate}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => {
+                                    log("info", {
+                                      event: "admin_qr_reprint",
+                                      actor,
+                                      resourceId: qrId,
+                                      result: "submitted",
+                                    });
+                                    reprintMutation.mutate(qrId);
+                                  }}
+                                  disabled={!canMutate || reprintMutation.isPending || deleteMutation.isPending}
+                                >
+                                  Reprint
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (!canMutate) return;
+                                    const confirmed = window.confirm(
+                                      `Delete QR ${qrId}? This permanently removes it from the database.`,
+                                    );
+                                    if (!confirmed) {
+                                      log("info", {
+                                        event: "admin_qr_delete",
+                                        actor,
+                                        resourceId: qrId,
+                                        result: "cancelled",
+                                      });
+                                      return;
+                                    }
                                     log("info", {
                                       event: "admin_qr_delete",
                                       actor,
                                       resourceId: qrId,
-                                      result: "cancelled",
+                                      result: "submitted",
                                     });
-                                    return;
-                                  }
-                                  log("info", {
-                                    event: "admin_qr_delete",
-                                    actor,
-                                    resourceId: qrId,
-                                    result: "submitted",
-                                  });
-                                  deleteMutation.mutate(qrId);
-                                }}
-                                disabled={!canMutate || reprintMutation.isPending || deleteMutation.isPending}
-                                className="min-h-(--bearhacks-touch-min) min-w-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm text-red-700 underline disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {deletingThisRow ? "Deleting…" : "Delete"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </>
-      )}
+                                    deleteMutation.mutate(qrId);
+                                  }}
+                                  disabled={!canMutate || reprintMutation.isPending || deleteMutation.isPending}
+                                  className="text-red-700"
+                                >
+                                  {deletingThisRow ? "Deleting…" : "Delete"}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </>
+        )}
       </main>
 
       {selectedQr && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) shadow-xl">
+          <Card
+            as="div"
+            className="max-h-[80vh] w-full max-w-2xl overflow-hidden p-0"
+          >
             <div className="flex items-center justify-between border-b border-(--bearhacks-border) px-4 py-3">
-              <h2 className="text-base font-semibold text-(--bearhacks-fg)">QR details</h2>
-              <button
-                type="button"
+              <CardTitle className="text-base">QR details</CardTitle>
+              <Button
+                variant="ghost"
                 onClick={() => {
                   log("info", {
                     event: "admin_qr_view",
@@ -814,14 +808,13 @@ export default function AdminQrPage() {
                   });
                   setSelectedQr(null);
                 }}
-                className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm underline"
               >
                 Close
-              </button>
+              </Button>
             </div>
             <div className="max-h-[calc(80vh-60px)] overflow-auto p-4">
               <table className="w-full border-collapse text-left text-sm">
-                <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-border)/20">
+                <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
                   <tr>
                     <th scope="col" className="w-1/3 px-3 py-2 font-medium">
                       Field
@@ -836,34 +829,38 @@ export default function AdminQrPage() {
                     <tr key={key} className="border-b border-(--bearhacks-border) last:border-0">
                       <td className="px-3 py-2 font-mono text-xs text-(--bearhacks-muted)">{key}</td>
                       <td className="px-3 py-2 font-mono text-xs text-(--bearhacks-fg)">
-                        {value === null || value === undefined
-                          ? "—"
-                          : typeof value === "object"
-                            ? JSON.stringify(value)
-                            : String(value)}
+                        {value === null || value === undefined ? (
+                          "—"
+                        ) : typeof value === "object" ? (
+                          <pre className="whitespace-pre-wrap break-all rounded-(--bearhacks-radius-sm) bg-(--bearhacks-surface-alt) p-2 font-mono text-[11px]">
+                            {JSON.stringify(value, null, 2)}
+                          </pre>
+                        ) : (
+                          String(value)
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {isLogsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[85vh] w-full max-w-6xl overflow-hidden rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) shadow-xl">
+          <Card as="div" className="max-h-[85vh] w-full max-w-6xl overflow-hidden p-0">
             <div className="flex items-center justify-between gap-3 border-b border-(--bearhacks-border) px-4 py-3">
               <div>
-                <h2 className="text-base font-semibold text-(--bearhacks-fg)">Admin logs</h2>
-                <p className="text-xs text-(--bearhacks-muted)">
-                  Structured view of in-app admin dashboard events
-                </p>
+                <CardTitle className="text-base">Admin logs</CardTitle>
+                <CardDescription className="mt-0.5">
+                  Structured view of in-app admin dashboard events.
+                </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => {
                     log("debug", {
                       event: "admin_logs_modal",
@@ -873,12 +870,11 @@ export default function AdminQrPage() {
                     });
                     setStructuredLogs(readStructuredLogs(500));
                   }}
-                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-xs font-medium"
                 >
                   Refresh
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => {
                     log("info", {
                       event: "admin_logs_modal",
@@ -888,20 +884,19 @@ export default function AdminQrPage() {
                     });
                     setIsLogsOpen(false);
                   }}
-                  className="min-h-(--bearhacks-touch-min) cursor-pointer rounded-(--bearhacks-radius-sm) px-2 text-sm underline"
                 >
                   Close
-                </button>
+                </Button>
               </div>
             </div>
 
-            <div className="max-h-[calc(85vh-64px)] overflow-auto p-4">
+            <div className="max-h-[calc(85vh-72px)] overflow-auto p-4">
               {structuredLogs.length === 0 ? (
                 <p className="text-sm text-(--bearhacks-muted)">No logs returned.</p>
               ) : (
-                <div className="overflow-x-auto rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border)">
+                <div className="overflow-x-auto rounded-(--bearhacks-radius-md) border border-(--bearhacks-border)">
                   <table className="w-full min-w-[980px] border-collapse text-left text-xs">
-                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-border)/20">
+                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
                       <tr>
                         <th scope="col" className="px-3 py-2 font-medium">
                           Scope
@@ -942,10 +937,10 @@ export default function AdminQrPage() {
                           <td className="px-3 py-2 font-mono">{entry.result}</td>
                           <td className="px-3 py-2 font-mono">{entry.level}</td>
                           <td className="px-3 py-2 font-mono">{entry.timestamp}</td>
-                          <td className="max-w-[480px] px-3 py-2 font-mono text-[11px] text-(--bearhacks-muted)">
-                            <span className="line-clamp-2 break-all">
-                              {JSON.stringify(entry.metadata)}
-                            </span>
+                          <td className="max-w-[480px] px-3 py-2 align-top">
+                            <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-(--bearhacks-radius-sm) bg-(--bearhacks-surface-alt) p-2 font-mono text-[11px] text-(--bearhacks-muted)">
+                              {JSON.stringify(entry.metadata, null, 2)}
+                            </pre>
                           </td>
                         </tr>
                       ))}
@@ -954,10 +949,9 @@ export default function AdminQrPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       )}
-
     </>
   );
 }

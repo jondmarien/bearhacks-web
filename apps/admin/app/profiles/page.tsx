@@ -1,13 +1,9 @@
 "use client";
 
 /**
- * Super-admin attendee directory (Linear DEV-22).
+ * Super-admin attendee directory.
  *
  * API: `GET /admin/profiles` (super-admin only). Regular `admin` JWTs receive 403.
- *
- * TODO(DEV-21): When the dedicated admin sign-in / shell from DEV-21 lands, fold this route into
- * shared navigation and auth UX (assignee: Nayan — see Linear DEV-21). Until then, this page
- * relies on the same Supabase browser session as the rest of `apps/admin`.
  */
 
 import { ApiError } from "@bearhacks/api-client";
@@ -17,6 +13,10 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { InputField } from "@/components/ui/field";
+import { PageHeader } from "@/components/ui/page-header";
 import { useApiClient } from "@/lib/use-api-client";
 import { isStaffUser, isSuperAdminUser } from "@/lib/supabase-role";
 
@@ -64,125 +64,119 @@ export default function AdminProfilesPage() {
     if (!query.error) return;
     const err = query.error;
     if (err instanceof ApiError) {
-      toast.error(err.status === 403 ? "Super admin access required" : err.message);
+      toast.error(err.status === 403 ? "Super-admin access required." : err.message);
     } else {
       toast.error("Failed to load profiles");
     }
   }, [query.error]);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-10">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-(--bearhacks-fg)">Profiles</h1>
-          <p className="mt-1 text-sm text-(--bearhacks-muted)">
-            Super-admin directory. Updates use <code className="rounded bg-(--bearhacks-border)/40 px-1">PATCH /profiles/{"{id}"}</code>.
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-sm) px-3 text-sm underline"
-        >
-          Admin home
-        </Link>
-      </div>
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
+      <PageHeader
+        title="Profiles"
+        subtitle="Search and edit attendee profiles."
+        backHref="/"
+        showBack
+      />
 
       {!staff && (
-        <p className="rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-bg) p-4 text-sm text-(--bearhacks-muted)">
-          Sign in with a staff account (<code className="rounded px-1">app_metadata.role</code> admin or super_admin). The API
-          enforces access on every request.
-        </p>
+        <Card>
+          <CardTitle>Staff access required</CardTitle>
+          <CardDescription className="mt-1">
+            Sign in with a staff account to view the profile directory.
+          </CardDescription>
+        </Card>
       )}
 
       {staff && !isSuper && (
-        <p className="rounded-(--bearhacks-radius-md) border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-          Your JWT role is <code className="rounded bg-white/60 px-1">admin</code>. This page calls super-admin-only routes;
-          ask for <code className="rounded bg-white/60 px-1">super_admin</code> in Supabase or add your email to{" "}
-          <code className="rounded bg-white/60 px-1">SUPER_ADMINS</code> on the API (see backend README).
-        </p>
+        <Card className="border-amber-200 bg-amber-50">
+          <CardTitle className="text-amber-900">Super-admin access required</CardTitle>
+          <CardDescription className="mt-1 text-amber-900">
+            This page is limited to super-admins. Ask a super-admin to grant your
+            account access, then sign out and back in.
+          </CardDescription>
+        </Card>
       )}
 
       {isSuper && (
         <>
-          <form
-            className="flex flex-col gap-3 sm:flex-row sm:items-end"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setAppliedSearch(draftSearch);
-            }}
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <label htmlFor="profile-search" className="text-sm font-medium text-(--bearhacks-fg)">
-                Search display name
-              </label>
-              <input
-                id="profile-search"
-                name="search"
-                value={draftSearch}
-                onChange={(e) => setDraftSearch(e.target.value)}
-                className="min-h-(--bearhacks-touch-min) rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) px-3 text-base text-(--bearhacks-fg)"
-                placeholder="Substring match"
-                autoComplete="off"
-              />
-            </div>
-            <button
-              type="submit"
-              className="min-h-(--bearhacks-touch-min) min-w-32 cursor-pointer rounded-(--bearhacks-radius-sm) bg-(--bearhacks-fg) px-4 text-sm font-medium text-(--bearhacks-bg)"
+          <Card>
+            <form
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setAppliedSearch(draftSearch);
+              }}
             >
-              Apply
-            </button>
-          </form>
+              <div className="min-w-0 flex-1">
+                <InputField
+                  label="Search display name"
+                  id="profile-search"
+                  name="search"
+                  value={draftSearch}
+                  onChange={(e) => setDraftSearch(e.target.value)}
+                  placeholder="Substring match"
+                  autoComplete="off"
+                />
+              </div>
+              <Button type="submit" variant="primary">
+                Apply
+              </Button>
+            </form>
+          </Card>
 
           {query.isLoading && <p className="text-sm text-(--bearhacks-muted)">Loading…</p>}
           {query.data && query.data.length === 0 && (
             <p className="text-sm text-(--bearhacks-muted)">No profiles match.</p>
           )}
           {query.data && query.data.length > 0 && (
-            <div className="overflow-x-auto rounded-(--bearhacks-radius-md) border border-(--bearhacks-border)">
-              <table className="w-full min-w-lg border-collapse text-left text-sm">
-                <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-border)/20">
-                  <tr>
-                    <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                      Name
-                    </th>
-                    <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                      Role
-                    </th>
-                    <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                      QR
-                    </th>
-                    <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                      Updated
-                    </th>
-                    <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {query.data.map((row) => (
-                    <tr key={row.id} className="border-b border-(--bearhacks-border) last:border-0">
-                      <td className="px-3 py-3 text-(--bearhacks-fg)">{row.display_name ?? "—"}</td>
-                      <td className="px-3 py-3 text-(--bearhacks-muted)">{row.role ?? "—"}</td>
-                      <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">
-                        {row.qr_id ? row.qr_id.slice(0, 8) + "…" : "—"}
-                      </td>
-                      <td className="px-3 py-3 text-(--bearhacks-muted)">
-                        {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
-                      </td>
-                      <td className="px-3 py-3">
-                        <Link
-                          href={`/profiles/${row.id}`}
-                          className="inline-flex min-h-(--bearhacks-touch-min) min-w-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-sm) px-2 text-sm underline"
-                        >
-                          Edit
-                        </Link>
-                      </td>
+            <Card className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-lg border-collapse text-left text-sm">
+                  <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
+                    <tr>
+                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                        Name
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                        Role
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                        QR
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                        Updated
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                        <span className="sr-only">Actions</span>
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {query.data.map((row) => (
+                      <tr key={row.id} className="border-b border-(--bearhacks-border) last:border-0">
+                        <td className="px-3 py-3 text-(--bearhacks-fg)">{row.display_name ?? "—"}</td>
+                        <td className="px-3 py-3 text-(--bearhacks-muted)">{row.role ?? "—"}</td>
+                        <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">
+                          {row.qr_id ? row.qr_id.slice(0, 8) + "…" : "—"}
+                        </td>
+                        <td className="px-3 py-3 text-(--bearhacks-muted)">
+                          {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
+                        </td>
+                        <td className="px-3 py-3">
+                          <Link
+                            href={`/profiles/${row.id}`}
+                            className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) px-3 text-sm font-semibold text-(--bearhacks-primary) hover:bg-(--bearhacks-surface-alt)"
+                          >
+                            Edit
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </>
       )}
