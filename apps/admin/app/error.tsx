@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const log = createLogger("me/error-boundary");
+const log = createLogger("admin/error-boundary");
 
 export default function GlobalError({
   error,
