@@ -12,6 +12,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InputField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
+import { ProfileNameTooltip } from "@/components/profile-name-tooltip";
 import {
   createStructuredLogger,
   readStructuredLogs,
@@ -956,7 +957,13 @@ export default function AdminQrPage() {
                                 {claimed ? "Claimed" : "Unclaimed"}
                               </span>
                             </td>
-                            <td className="px-3 py-3 text-(--bearhacks-muted) break-all">{row.claimed_by ?? "—"}</td>
+                            <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted) break-all">
+                              {row.claimed_by ? (
+                                <ProfileNameTooltip profileId={row.claimed_by} />
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                             <td className="px-2 py-3 text-center">
                               <div className="flex items-center justify-center gap-1">
                                 <Button
@@ -1145,7 +1152,11 @@ export default function AdminQrPage() {
                             Claimed by
                           </dt>
                           <dd className="font-mono break-all text-(--bearhacks-fg)">
-                            {row.claimed_by ?? "—"}
+                            {row.claimed_by ? (
+                              <ProfileNameTooltip profileId={row.claimed_by} />
+                            ) : (
+                              "—"
+                            )}
                           </dd>
                         </dl>
                         <div className="flex flex-wrap items-center gap-2">
