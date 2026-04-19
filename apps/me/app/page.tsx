@@ -13,6 +13,7 @@ import { DashboardOAuthButtons } from "@/components/dashboard-oauth-buttons";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputField, TextareaField } from "@/components/ui/field";
+import { QrPreview } from "@/components/ui/qr-preview";
 import { useApiClient } from "@/lib/use-api-client";
 
 const log = createLogger("me/home");
@@ -329,12 +330,15 @@ export default function HomePage() {
               Show this QR to other attendees to share your profile.
             </CardDescription>
           </CardHeader>
-          <Link
-            href={`/qr-card/${qrId}`}
-            className="inline-flex min-h-(--bearhacks-touch-min) w-fit items-center rounded-(--bearhacks-radius-pill) bg-(--bearhacks-accent) px-6 text-sm font-semibold text-(--bearhacks-primary) no-underline hover:bg-(--bearhacks-accent-soft)"
-          >
-            Open my QR card →
-          </Link>
+          <div className="flex flex-col items-center gap-4">
+            <QrPreview qrId={qrId} size={224} />
+            <Link
+              href={`/qr-card/${qrId}`}
+              className="inline-flex min-h-(--bearhacks-touch-min) w-fit items-center rounded-(--bearhacks-radius-pill) bg-(--bearhacks-accent) px-6 text-sm font-semibold text-(--bearhacks-primary) no-underline hover:bg-(--bearhacks-accent-soft)"
+            >
+              Open full-size QR card →
+            </Link>
+          </div>
         </Card>
       ) : null}
 

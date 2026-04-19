@@ -10,6 +10,7 @@ import { useMeAuth } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { QrPreview } from "@/components/ui/qr-preview";
 import { queuePendingScan } from "@/lib/pending-scans";
 import { useApiClient } from "@/lib/use-api-client";
 
@@ -23,6 +24,7 @@ type PublicProfile = {
   linkedin_url?: string | null;
   github_url?: string | null;
   personal_url?: string | null;
+  qr_id?: string | null;
 };
 
 function isUuidLike(value: string): boolean {
@@ -249,6 +251,23 @@ export default function ContactPage() {
               ) : null}
             </ul>
           )}
+
+          {profile.qr_id ? (
+            <div className="mt-6 flex flex-col items-center gap-2 rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface-alt) p-4">
+              <span className="text-xs font-semibold uppercase tracking-[0.1rem] text-(--bearhacks-text-marketing)/70">
+                QR card
+              </span>
+              <QrPreview
+                qrId={profile.qr_id}
+                size={200}
+                label={
+                  isOwnProfile
+                    ? "This is your printed lanyard QR."
+                    : `Scan to revisit ${profile.display_name?.trim() || "this attendee"}.`
+                }
+              />
+            </div>
+          ) : null}
 
           <div className="mt-6">
             {isOwnProfile ? (
