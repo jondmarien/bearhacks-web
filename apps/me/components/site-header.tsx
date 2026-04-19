@@ -50,14 +50,15 @@ export function SiteHeader() {
           </span>
         </Link>
         <div className="flex min-w-0 items-center gap-2 text-xs uppercase tracking-widest text-(--bearhacks-accent-soft)">
-          {displayName ? (
+          {displayName && userId ? (
             <>
-              <span
-                className="max-w-40 truncate font-bold text-(--bearhacks-accent) sm:max-w-xs"
-                title={`Signed in as ${displayName}`}
+              <Link
+                href={`/contacts/${userId}`}
+                className="max-w-40 truncate font-bold text-(--bearhacks-accent) underline-offset-4 hover:underline sm:max-w-xs"
+                title={`Signed in as ${displayName} — view my profile`}
               >
                 {displayName}
-              </span>
+              </Link>
               <span aria-hidden="true" className="text-(--bearhacks-accent-soft)/50">
                 |
               </span>
