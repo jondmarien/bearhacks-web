@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InputField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { useApiClient } from "@/lib/use-api-client";
@@ -61,6 +62,7 @@ export default function AdminSuperAdminsPage() {
   const supabase = useSupabase();
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [user, setUser] = useState<User | null>(null);
   const [emailDraft, setEmailDraft] = useState("");
 
@@ -307,14 +309,16 @@ export default function AdminSuperAdminsPage() {
                     }
                     onClick={() => {
                       if (disabled) return;
-                      if (
-                        !window.confirm(
-                          `Fix drift for ${driftCount} entr${driftCount === 1 ? "y" : "ies"}? This will sync the JWT role and the allowlist for every drift row.`,
-                        )
-                      ) {
-                        return;
-                      }
-                      reconcileMutation.mutate();
+                      void (async () => {
+                        const ok = await confirm({
+                          title: `Fix drift for ${driftCount} entr${driftCount === 1 ? "y" : "ies"}?`,
+                          description:
+                            "This will sync the JWT role and the allowlist for every drift row.",
+                          confirmLabel: "Fix drift",
+                        });
+                        if (!ok) return;
+                        reconcileMutation.mutate();
+                      })();
                     }}
                   >
                     {reconcileMutation.isPending
@@ -413,17 +417,19 @@ export default function AdminSuperAdminsPage() {
                               }
                               onClick={() => {
                                 if (isSelf || missingUserId) return;
-                                if (
-                                  !window.confirm(
-                                    `Revoke super-admin access from ${row.email}?`,
-                                  )
-                                ) {
-                                  return;
-                                }
-                                revokeMutation.mutate({
-                                  userId: row.user_id,
-                                  email: row.email,
-                                });
+                                void (async () => {
+                                  const ok = await confirm({
+                                    title: "Revoke super-admin access?",
+                                    description: `${row.email} will lose super-admin access immediately.`,
+                                    confirmLabel: "Revoke",
+                                    tone: "danger",
+                                  });
+                                  if (!ok) return;
+                                  revokeMutation.mutate({
+                                    userId: row.user_id,
+                                    email: row.email,
+                                  });
+                                })();
                               }}
                             >
                               Revoke

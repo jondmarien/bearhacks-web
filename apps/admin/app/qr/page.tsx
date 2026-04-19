@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InputField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -75,6 +76,7 @@ function resolveMeBaseUrl(): string {
 export default function AdminQrPage() {
   const supabase = useSupabase();
   const client = useApiClient();
+  const confirm = useConfirm();
   const [user, setUser] = useState<User | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "claimed" | "unclaimed">("all");
   const [claimedBySearch, setClaimedBySearch] = useState("");
@@ -724,27 +726,34 @@ export default function AdminQrPage() {
                     onClick={() => {
                       const ids = Array.from(selectedRowIds);
                       if (ids.length === 0) return;
-                      const confirmed = window.confirm(
-                        `Delete ${ids.length} selected QR code(s)? This permanently removes them from the database.`,
-                      );
-                      if (!confirmed) {
+                      void (async () => {
+                        const confirmed = await confirm({
+                          title: `Delete ${ids.length} QR code(s)?`,
+                          description:
+                            "This permanently removes the selected codes from the database.",
+                          confirmLabel: `Delete ${ids.length}`,
+                          cancelLabel: "Cancel",
+                          tone: "danger",
+                        });
+                        if (!confirmed) {
+                          log("info", {
+                            event: "admin_qr_bulk_delete",
+                            actor,
+                            resourceId: "/qr/bulk",
+                            result: "cancelled",
+                            count: ids.length,
+                          });
+                          return;
+                        }
                         log("info", {
                           event: "admin_qr_bulk_delete",
                           actor,
                           resourceId: "/qr/bulk",
-                          result: "cancelled",
+                          result: "submitted",
                           count: ids.length,
                         });
-                        return;
-                      }
-                      log("info", {
-                        event: "admin_qr_bulk_delete",
-                        actor,
-                        resourceId: "/qr/bulk",
-                        result: "submitted",
-                        count: ids.length,
-                      });
-                      bulkDeleteMutation.mutate(ids);
+                        bulkDeleteMutation.mutate(ids);
+                      })();
                     }}
                     disabled={selectedRowIds.size === 0 || bulkDeleteMutation.isPending}
                     className="text-red-700"
@@ -964,25 +973,31 @@ export default function AdminQrPage() {
                                   variant="ghost"
                                   onClick={() => {
                                     if (!canMutate) return;
-                                    const confirmed = window.confirm(
-                                      `Delete QR ${qrId}? This permanently removes it from the database.`,
-                                    );
-                                    if (!confirmed) {
+                                    void (async () => {
+                                      const confirmed = await confirm({
+                                        title: "Delete QR code?",
+                                        description: `QR ${qrId} will be permanently removed from the database.`,
+                                        confirmLabel: "Delete",
+                                        cancelLabel: "Cancel",
+                                        tone: "danger",
+                                      });
+                                      if (!confirmed) {
+                                        log("info", {
+                                          event: "admin_qr_delete",
+                                          actor,
+                                          resourceId: qrId,
+                                          result: "cancelled",
+                                        });
+                                        return;
+                                      }
                                       log("info", {
                                         event: "admin_qr_delete",
                                         actor,
                                         resourceId: qrId,
-                                        result: "cancelled",
+                                        result: "submitted",
                                       });
-                                      return;
-                                    }
-                                    log("info", {
-                                      event: "admin_qr_delete",
-                                      actor,
-                                      resourceId: qrId,
-                                      result: "submitted",
-                                    });
-                                    deleteMutation.mutate(qrId);
+                                      deleteMutation.mutate(qrId);
+                                    })();
                                   }}
                                   disabled={
                                     !canMutate ||

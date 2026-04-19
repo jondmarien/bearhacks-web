@@ -8,6 +8,7 @@ import { createClient, type User, type SupabaseClient } from "@supabase/supabase
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { toast, Toaster } from "sonner";
 import { EmailClaimModal } from "@/components/email-claim-modal";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 import {
   requestPortalClaimOtp,
   submitPortalClaimEmail,
@@ -253,7 +254,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             signOut,
           }}
         >
-          {children}
+          <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
           <EmailClaimModal
             open={emailClaimOpen && !!user}
             oauthEmailHint={oauthEmailHint}

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
 import { Toaster } from "sonner";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 
 const log = createLogger("admin/providers");
 const SupabaseContext = createContext<SupabaseClient | null>(null);
@@ -36,7 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SupabaseContext.Provider value={supabase}>
-        {children}
+        <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
         <Toaster richColors position="top-center" />
       </SupabaseContext.Provider>
     </QueryClientProvider>
