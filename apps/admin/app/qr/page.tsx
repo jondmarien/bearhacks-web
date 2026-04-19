@@ -88,6 +88,7 @@ export default function AdminQrPage() {
   const [selectedQr, setSelectedQr] = useState<QrRow | null>(null);
   const [selectedQrImage, setSelectedQrImage] = useState<string | null>(null);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(() => new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [structuredLogs, setStructuredLogs] = useState<StructuredLogEntry[]>([]);
 
@@ -107,6 +108,7 @@ export default function AdminQrPage() {
 
   useEffect(() => {
     setSelectedRowIds(new Set());
+    setIsBulkMode(false);
   }, [statusFilter, claimedBySearch]);
 
   const selectedClaimUrl = useMemo(() => {
@@ -430,6 +432,7 @@ export default function AdminQrPage() {
       }
       if (failed.length === 0) {
         toast.success(`Deleted ${succeeded.length} QR code(s).`);
+        setIsBulkMode(false);
       } else if (succeeded.length === 0) {
         toast.error(`Failed to delete ${failed.length} QR code(s).`);
       } else {
@@ -721,47 +724,69 @@ export default function AdminQrPage() {
                   </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      const ids = Array.from(selectedRowIds);
-                      if (ids.length === 0) return;
-                      void (async () => {
-                        const confirmed = await confirm({
-                          title: `Delete ${ids.length} QR code(s)?`,
-                          description:
-                            "This permanently removes the selected codes from the database.",
-                          confirmLabel: `Delete ${ids.length}`,
-                          cancelLabel: "Cancel",
-                          tone: "danger",
-                        });
-                        if (!confirmed) {
-                          log("info", {
-                            event: "admin_qr_bulk_delete",
-                            actor,
-                            resourceId: "/qr/bulk",
-                            result: "cancelled",
-                            count: ids.length,
-                          });
-                          return;
-                        }
-                        log("info", {
-                          event: "admin_qr_bulk_delete",
-                          actor,
-                          resourceId: "/qr/bulk",
-                          result: "submitted",
-                          count: ids.length,
-                        });
-                        bulkDeleteMutation.mutate(ids);
-                      })();
-                    }}
-                    disabled={selectedRowIds.size === 0 || bulkDeleteMutation.isPending}
-                    className="text-red-700"
-                  >
-                    {bulkDeleteMutation.isPending
-                      ? `Deleting ${selectedRowIds.size}…`
-                      : `Delete selected (${selectedRowIds.size})`}
-                  </Button>
+                  {isBulkMode ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          const ids = Array.from(selectedRowIds);
+                          if (ids.length === 0) return;
+                          void (async () => {
+                            const confirmed = await confirm({
+                              title: `Delete ${ids.length} QR code(s)?`,
+                              description:
+                                "This permanently removes the selected codes from the database.",
+                              confirmLabel: `Delete ${ids.length}`,
+                              cancelLabel: "Cancel",
+                              tone: "danger",
+                            });
+                            if (!confirmed) {
+                              log("info", {
+                                event: "admin_qr_bulk_delete",
+                                actor,
+                                resourceId: "/qr/bulk",
+                                result: "cancelled",
+                                count: ids.length,
+                              });
+                              return;
+                            }
+                            log("info", {
+                              event: "admin_qr_bulk_delete",
+                              actor,
+                              resourceId: "/qr/bulk",
+                              result: "submitted",
+                              count: ids.length,
+                            });
+                            bulkDeleteMutation.mutate(ids);
+                          })();
+                        }}
+                        disabled={selectedRowIds.size === 0 || bulkDeleteMutation.isPending}
+                        className="text-red-700"
+                      >
+                        {bulkDeleteMutation.isPending
+                          ? `Deleting ${selectedRowIds.size}…`
+                          : `Delete (${selectedRowIds.size})`}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setIsBulkMode(false);
+                          setSelectedRowIds(new Set());
+                        }}
+                        disabled={bulkDeleteMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setIsBulkMode(true)}
+                      className="text-red-700"
+                    >
+                      Bulk delete
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     onClick={() => {
@@ -836,8 +861,9 @@ export default function AdminQrPage() {
                   <table className="w-full min-w-xl border-collapse text-left text-sm">
                     <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
                       <tr>
-                        <th scope="col" className="w-10 px-3 py-3">
-                          {(() => {
+                        {isBulkMode ? (
+                          <th scope="col" className="w-10 px-3 py-3">
+                            {(() => {
                             const selectableIds = (qrQuery.data ?? [])
                               .map((row) => row.id)
                               .filter((id): id is string => Boolean(id));
@@ -866,7 +892,8 @@ export default function AdminQrPage() {
                               />
                             );
                           })()}
-                        </th>
+                          </th>
+                        ) : null}
                         <th scope="col" className="px-3 py-3 font-medium">
                           QR id
                         </th>
@@ -897,27 +924,29 @@ export default function AdminQrPage() {
                         const isSelected = canMutate && selectedRowIds.has(qrId);
                         return (
                           <tr key={qrId} className="border-b border-(--bearhacks-border) last:border-0">
-                            <td className="px-3 py-3">
-                              <input
-                                type="checkbox"
-                                aria-label={`Select QR ${qrId}`}
-                                className="h-4 w-4 cursor-pointer accent-(--bearhacks-primary)"
-                                checked={isSelected}
-                                onChange={(event) => {
-                                  if (!canMutate) return;
-                                  setSelectedRowIds((prev) => {
-                                    const next = new Set(prev);
-                                    if (event.target.checked) {
-                                      next.add(qrId);
-                                    } else {
-                                      next.delete(qrId);
-                                    }
-                                    return next;
-                                  });
-                                }}
-                                disabled={!canMutate || bulkDeleteMutation.isPending}
-                              />
-                            </td>
+                            {isBulkMode ? (
+                              <td className="px-3 py-3">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select QR ${qrId}`}
+                                  className="h-4 w-4 cursor-pointer accent-(--bearhacks-primary)"
+                                  checked={isSelected}
+                                  onChange={(event) => {
+                                    if (!canMutate) return;
+                                    setSelectedRowIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (event.target.checked) {
+                                        next.add(qrId);
+                                      } else {
+                                        next.delete(qrId);
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                  disabled={!canMutate || bulkDeleteMutation.isPending}
+                                />
+                              </td>
+                            ) : null}
                             <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{qrId}</td>
                             <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">{generatedBy}</td>
                             <td className="px-3 py-3">
