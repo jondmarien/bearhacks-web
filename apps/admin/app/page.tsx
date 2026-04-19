@@ -132,10 +132,10 @@ export default function AdminHome() {
         <Link href="/super-admins" className="no-underline">
           <Card className="h-full transition-shadow hover:shadow-lg">
             <CardTitle>
-              Super- <span className="bg-(--bearhacks-cream) px-1 rounded-sm">admins</span>
-            </CardTitle>
+              Super Admin <span className="bg-(--bearhacks-cream) px-1 rounded-sm">tools</span>
+            </CardTitle>  
             <CardDescription className="mt-1">
-              Grant or revoke super-admin access by Discord email.
+              Grant or revoke Super Admin access by Discord email.
             </CardDescription>
             <span className="mt-4 inline-flex min-h-(--bearhacks-touch-min) items-center rounded-(--bearhacks-radius-pill) bg-(--bearhacks-accent) px-6 py-3 text-sm font-semibold text-(--bearhacks-primary)">
               Open super-admin tools →

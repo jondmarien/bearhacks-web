@@ -452,7 +452,7 @@ export default function AdminQrPage() {
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
         <PageHeader
           title="QR fulfillment"
           tone="marketing"
@@ -853,7 +853,7 @@ export default function AdminQrPage() {
                 </p>
               )}
               {qrQuery.data && (
-                <div className="mt-4 overflow-x-auto rounded-(--bearhacks-radius-md) border border-(--bearhacks-border)">
+                <div className="mt-4 hidden overflow-x-auto rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) sm:block">
                   <table className="w-full min-w-xl border-collapse text-left text-sm">
                     <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
                       <tr>
@@ -1042,6 +1042,191 @@ export default function AdminQrPage() {
                     </tbody>
                   </table>
                 </div>
+              )}
+
+              {qrQuery.data && qrQuery.data.length > 0 && (
+                <ul className="mt-4 flex flex-col gap-3 sm:hidden">
+                  {(() => {
+                    const selectableIds = qrQuery.data
+                      .map((row) => row.id)
+                      .filter((id): id is string => Boolean(id));
+                    const allSelected =
+                      selectableIds.length > 0 &&
+                      selectableIds.every((id) => selectedRowIds.has(id));
+                    const someSelected =
+                      !allSelected && selectableIds.some((id) => selectedRowIds.has(id));
+                    return isBulkMode ? (
+                      <li className="flex items-center gap-2 rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface-alt) px-3 py-2">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all rows"
+                          className="h-4 w-4 cursor-pointer accent-(--bearhacks-primary)"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someSelected;
+                          }}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedRowIds(new Set(selectableIds));
+                            } else {
+                              setSelectedRowIds(new Set());
+                            }
+                          }}
+                          disabled={selectableIds.length === 0 || bulkDeleteMutation.isPending}
+                        />
+                        <span className="text-xs font-medium text-(--bearhacks-fg)">
+                          Select all ({selectedRowIds.size}/{selectableIds.length})
+                        </span>
+                      </li>
+                    ) : null;
+                  })()}
+                  {qrQuery.data.map((row) => {
+                    const qrId = row.id ?? "unknown";
+                    const canMutate = Boolean(row.id);
+                    const claimed = Boolean(row.claimed);
+                    const generatedBy = row.generated_by?.trim()
+                      ? row.generated_by
+                      : "legacy/unknown";
+                    const deletingThisRow =
+                      deleteMutation.isPending && deleteMutation.variables === qrId;
+                    const isSelected = canMutate && selectedRowIds.has(qrId);
+                    return (
+                      <li
+                        key={`mobile-${qrId}`}
+                        className="flex flex-col gap-2 rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface) p-3"
+                      >
+                        <div className="flex items-start gap-2">
+                          {isBulkMode ? (
+                            <input
+                              type="checkbox"
+                              aria-label={`Select QR ${qrId}`}
+                              className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-(--bearhacks-primary)"
+                              checked={isSelected}
+                              onChange={(event) => {
+                                if (!canMutate) return;
+                                setSelectedRowIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (event.target.checked) {
+                                    next.add(qrId);
+                                  } else {
+                                    next.delete(qrId);
+                                  }
+                                  return next;
+                                });
+                              }}
+                              disabled={!canMutate || bulkDeleteMutation.isPending}
+                            />
+                          ) : null}
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <p className="font-mono text-xs break-all text-(--bearhacks-fg)">
+                              {qrId}
+                            </p>
+                            <span
+                              className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                claimed
+                                  ? "bg-(--bearhacks-primary) text-(--bearhacks-on-primary)"
+                                  : "bg-(--bearhacks-border)/40 text-(--bearhacks-muted)"
+                              }`}
+                            >
+                              {claimed ? "Claimed" : "Unclaimed"}
+                            </span>
+                          </div>
+                        </div>
+                        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+                          <dt className="font-mono uppercase tracking-wide text-(--bearhacks-muted)">
+                            Generated
+                          </dt>
+                          <dd className="font-mono break-all text-(--bearhacks-fg)">
+                            {generatedBy}
+                          </dd>
+                          <dt className="font-mono uppercase tracking-wide text-(--bearhacks-muted)">
+                            Claimed by
+                          </dt>
+                          <dd className="font-mono break-all text-(--bearhacks-fg)">
+                            {row.claimed_by ?? "—"}
+                          </dd>
+                        </dl>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              log("info", {
+                                event: "admin_qr_view",
+                                actor,
+                                resourceId: qrId,
+                                result: "opened",
+                              });
+                              setSelectedQr(row);
+                            }}
+                            disabled={!canMutate}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              log("info", {
+                                event: "admin_qr_reprint",
+                                actor,
+                                resourceId: qrId,
+                                result: "submitted",
+                              });
+                              reprintMutation.mutate(qrId);
+                            }}
+                            disabled={
+                              !canMutate ||
+                              reprintMutation.isPending ||
+                              deleteMutation.isPending ||
+                              bulkDeleteMutation.isPending
+                            }
+                          >
+                            Reprint
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="text-red-700"
+                            onClick={() => {
+                              if (!canMutate) return;
+                              void (async () => {
+                                const confirmed = await confirm({
+                                  title: "Delete QR code?",
+                                  description: `QR ${qrId} will be permanently removed from the database.`,
+                                  confirmLabel: "Delete",
+                                  cancelLabel: "Cancel",
+                                  tone: "danger",
+                                });
+                                if (!confirmed) {
+                                  log("info", {
+                                    event: "admin_qr_delete",
+                                    actor,
+                                    resourceId: qrId,
+                                    result: "cancelled",
+                                  });
+                                  return;
+                                }
+                                log("info", {
+                                  event: "admin_qr_delete",
+                                  actor,
+                                  resourceId: qrId,
+                                  result: "submitted",
+                                });
+                                deleteMutation.mutate(qrId);
+                              })();
+                            }}
+                            disabled={
+                              !canMutate ||
+                              reprintMutation.isPending ||
+                              deleteMutation.isPending ||
+                              bulkDeleteMutation.isPending
+                            }
+                          >
+                            {deletingThisRow ? "Deleting…" : "Delete"}
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </Card>
           </>
