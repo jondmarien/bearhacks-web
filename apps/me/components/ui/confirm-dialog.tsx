@@ -42,6 +42,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [mounted, setMounted] = useState(false);
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -67,14 +68,15 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!dialog) return;
-    confirmButtonRef.current?.focus();
+    if (dialog.tone === "danger") {
+      cancelButtonRef.current?.focus();
+    } else {
+      confirmButtonRef.current?.focus();
+    }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         close(false);
-      } else if (event.key === "Enter") {
-        event.preventDefault();
-        close(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -92,7 +94,7 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
               role="dialog"
               aria-modal="true"
               aria-labelledby="confirm-dialog-title"
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+              className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 p-4"
               onMouseDown={(event) => {
                 if (event.target === event.currentTarget) close(false);
               }}
@@ -109,9 +111,9 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
                 ) : null}
                 <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <Button
+                    ref={cancelButtonRef}
                     variant="ghost"
                     onClick={() => close(false)}
-                    autoFocus={dialog.tone !== "danger"}
                   >
                     {dialog.cancelLabel ?? "Cancel"}
                   </Button>
