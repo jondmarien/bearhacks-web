@@ -956,11 +956,12 @@ export default function AdminQrPage() {
                                 {claimed ? "Claimed" : "Unclaimed"}
                               </span>
                             </td>
-                            <td className="px-3 py-3 text-(--bearhacks-muted)">{row.claimed_by ?? "—"}</td>
-                            <td className="px-3 py-3 text-center">
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="px-3 py-3 text-(--bearhacks-muted) break-all">{row.claimed_by ?? "—"}</td>
+                            <td className="px-2 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
                                 <Button
                                   variant="ghost"
+                                  className="px-2!"
                                   onClick={() => {
                                     log("info", {
                                       event: "admin_qr_view",
@@ -976,6 +977,7 @@ export default function AdminQrPage() {
                                 </Button>
                                 <Button
                                   variant="ghost"
+                                  className="px-2!"
                                   onClick={() => {
                                     log("info", {
                                       event: "admin_qr_reprint",
@@ -1030,7 +1032,7 @@ export default function AdminQrPage() {
                                     deleteMutation.isPending ||
                                     bulkDeleteMutation.isPending
                                   }
-                                  className="text-red-700"
+                                  className="px-2! text-red-700"
                                 >
                                   {deletingThisRow ? "Deleting…" : "Delete"}
                                 </Button>
