@@ -207,7 +207,7 @@ export default function AdminSuperAdminsPage() {
   });
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
       <PageHeader
         title="Super Admins"
         tone="marketing"
@@ -281,7 +281,7 @@ export default function AdminSuperAdminsPage() {
           </Card>
 
           <Card className="p-0">
-            <div className="flex flex-col gap-3 border-b border-(--bearhacks-border) px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-(--bearhacks-border) px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4">
               <div>
                 <CardTitle className="text-base">
                   Current{" "}
@@ -337,112 +337,189 @@ export default function AdminSuperAdminsPage() {
                 Loading…
               </p>
             ) : query.data && query.data.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-lg border-collapse text-left text-sm">
-                  <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-3 py-3 font-medium text-(--bearhacks-fg)"
-                      >
-                        Email
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3 font-medium text-(--bearhacks-fg)"
-                      >
-                        Granted
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3 font-medium text-(--bearhacks-fg)"
-                      >
-                        Status
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3 font-medium text-(--bearhacks-fg)"
-                      >
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {query.data.map((row) => {
-                      const isSelf = row.user_id === user?.id;
-                      const drift = row.on_allowlist !== row.has_jwt_role;
-                      const missingUserId = !row.user_id;
-                      return (
-                        <tr
-                          key={row.user_id || row.email}
-                          className="border-b border-(--bearhacks-border) last:border-0"
+              <>
+                <div className="hidden overflow-x-auto sm:block">
+                  <table className="w-full min-w-lg border-collapse text-left text-sm">
+                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-3 py-3 font-medium text-(--bearhacks-fg)"
                         >
-                          <td className="px-3 py-3 text-(--bearhacks-fg)">
-                            {row.email || "—"}
-                            {isSelf ? (
-                              <span className="ml-2 rounded bg-(--bearhacks-accent-soft) px-2 py-0.5 text-xs font-medium text-(--bearhacks-primary)">
-                                you
-                              </span>
-                            ) : null}
-                          </td>
-                          <td className="px-3 py-3 text-(--bearhacks-muted)">
-                            {formatTimestamp(row.granted_at)}
-                          </td>
-                          <td className="px-3 py-3">
-                            {drift ? (
-                              <span
-                                className="inline-flex items-center rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900"
-                                title={`JWT role: ${row.has_jwt_role ? "yes" : "no"} · Allowlist: ${row.on_allowlist ? "yes" : "no"}`}
+                          Email
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-3 font-medium text-(--bearhacks-fg)"
+                        >
+                          Granted
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-3 font-medium text-(--bearhacks-fg)"
+                        >
+                          Status
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-3 font-medium text-(--bearhacks-fg)"
+                        >
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {query.data.map((row) => {
+                        const isSelf = row.user_id === user?.id;
+                        const drift = row.on_allowlist !== row.has_jwt_role;
+                        const missingUserId = !row.user_id;
+                        return (
+                          <tr
+                            key={row.user_id || row.email}
+                            className="border-b border-(--bearhacks-border) last:border-0"
+                          >
+                            <td className="px-3 py-3 break-all text-(--bearhacks-fg)">
+                              {row.email || "—"}
+                              {isSelf ? (
+                                <span className="ml-2 rounded bg-(--bearhacks-accent-soft) px-2 py-0.5 text-xs font-medium text-(--bearhacks-primary)">
+                                  you
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="px-3 py-3 text-(--bearhacks-muted)">
+                              {formatTimestamp(row.granted_at)}
+                            </td>
+                            <td className="px-3 py-3">
+                              {drift ? (
+                                <span
+                                  className="inline-flex items-center rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900"
+                                  title={`JWT role: ${row.has_jwt_role ? "yes" : "no"} · Allowlist: ${row.on_allowlist ? "yes" : "no"}`}
+                                >
+                                  Drift
+                                </span>
+                              ) : (
+                                <span className="text-xs text-(--bearhacks-muted)">
+                                  In sync
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <Button
+                                variant="pill"
+                                disabled={
+                                  isSelf ||
+                                  missingUserId ||
+                                  revokeMutation.isPending
+                                }
+                                title={
+                                  isSelf
+                                    ? "You can't revoke your own Super Admin role."
+                                    : missingUserId
+                                      ? "No matching auth user — clean up the allowlist row directly in Supabase."
+                                      : undefined
+                                }
+                                onClick={() => {
+                                  if (isSelf || missingUserId) return;
+                                  void (async () => {
+                                    const ok = await confirm({
+                                      title: "Revoke Super Admin access?",
+                                      description: `${row.email} will lose Super Admin access immediately.`,
+                                      confirmLabel: "Revoke",
+                                      tone: "danger",
+                                    });
+                                    if (!ok) return;
+                                    revokeMutation.mutate({
+                                      userId: row.user_id,
+                                      email: row.email,
+                                    });
+                                  })();
+                                }}
                               >
-                                Drift
-                              </span>
-                            ) : (
-                              <span className="text-xs text-(--bearhacks-muted)">
-                                In sync
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 text-right">
-                            <Button
-                              variant="pill"
-                              disabled={
-                                isSelf ||
-                                missingUserId ||
-                                revokeMutation.isPending
-                              }
-                              title={
-                                isSelf
-                                  ? "You can't revoke your own Super Admin role."
-                                  : missingUserId
-                                    ? "No matching auth user — clean up the allowlist row directly in Supabase."
-                                    : undefined
-                              }
-                              onClick={() => {
-                                if (isSelf || missingUserId) return;
-                                void (async () => {
-                                  const ok = await confirm({
-                                    title: "Revoke Super Admin access?",
-                                    description: `${row.email} will lose Super Admin access immediately.`,
-                                    confirmLabel: "Revoke",
-                                    tone: "danger",
-                                  });
-                                  if (!ok) return;
-                                  revokeMutation.mutate({
-                                    userId: row.user_id,
-                                    email: row.email,
-                                  });
-                                })();
-                              }}
+                                Revoke
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <ul className="flex flex-col divide-y divide-(--bearhacks-border) sm:hidden">
+                  {query.data.map((row) => {
+                    const isSelf = row.user_id === user?.id;
+                    const drift = row.on_allowlist !== row.has_jwt_role;
+                    const missingUserId = !row.user_id;
+                    return (
+                      <li
+                        key={row.user_id || row.email}
+                        className="flex flex-col gap-2 px-3 py-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="break-all text-sm font-semibold text-(--bearhacks-fg)">
+                            {row.email || "—"}
+                          </span>
+                          {isSelf ? (
+                            <span className="rounded bg-(--bearhacks-accent-soft) px-2 py-0.5 text-xs font-medium text-(--bearhacks-primary)">
+                              you
+                            </span>
+                          ) : null}
+                          {drift ? (
+                            <span
+                              className="inline-flex items-center rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900"
+                              title={`JWT role: ${row.has_jwt_role ? "yes" : "no"} · Allowlist: ${row.on_allowlist ? "yes" : "no"}`}
                             >
-                              Revoke
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                              Drift
+                            </span>
+                          ) : (
+                            <span className="text-xs text-(--bearhacks-muted)">
+                              In sync
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-(--bearhacks-muted)">
+                          Granted: {formatTimestamp(row.granted_at)}
+                        </p>
+                        <div>
+                          <Button
+                            variant="pill"
+                            disabled={
+                              isSelf ||
+                              missingUserId ||
+                              revokeMutation.isPending
+                            }
+                            title={
+                              isSelf
+                                ? "You can't revoke your own Super Admin role."
+                                : missingUserId
+                                  ? "No matching auth user — clean up the allowlist row directly in Supabase."
+                                  : undefined
+                            }
+                            onClick={() => {
+                              if (isSelf || missingUserId) return;
+                              void (async () => {
+                                const ok = await confirm({
+                                  title: "Revoke Super Admin access?",
+                                  description: `${row.email} will lose Super Admin access immediately.`,
+                                  confirmLabel: "Revoke",
+                                  tone: "danger",
+                                });
+                                if (!ok) return;
+                                revokeMutation.mutate({
+                                  userId: row.user_id,
+                                  email: row.email,
+                                });
+                              })();
+                            }}
+                          >
+                            Revoke
+                          </Button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             ) : (
               <p className="px-4 py-6 text-sm text-(--bearhacks-muted)">
                 No Super Admins yet.

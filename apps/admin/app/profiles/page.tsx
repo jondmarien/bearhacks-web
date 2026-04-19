@@ -99,7 +99,7 @@ export default function AdminProfilesPage() {
   });
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
       <PageHeader
         title="Profiles"
         tone="marketing"
@@ -159,90 +159,164 @@ export default function AdminProfilesPage() {
             <p className="text-sm text-(--bearhacks-muted)">No profiles match.</p>
           )}
           {query.data && query.data.length > 0 && (
-            <Card className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-lg border-collapse text-left text-sm">
-                  <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
-                    <tr>
-                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        Name
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        Role
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        QR
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        Updated
-                      </th>
-                      <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {query.data.map((row) => (
-                      <tr key={row.id} className="border-b border-(--bearhacks-border) last:border-0">
-                        <td className="px-3 py-3 text-(--bearhacks-fg)">{row.display_name ?? "—"}</td>
-                        <td className="px-3 py-3 text-(--bearhacks-muted)">{row.role ?? "—"}</td>
-                        <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">
-                          {row.qr_id ? row.qr_id.slice(0, 8) + "…" : "—"}
-                        </td>
-                        <td className="px-3 py-3 text-(--bearhacks-muted)">
-                          {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Link
-                              href={`/profiles/${row.id}`}
-                              className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
-                            >
-                              Edit
-                            </Link>
-                            <a
-                              href={`${resolveMeBaseUrl()}/contacts/${row.id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
-                            >
-                              View profile
-                            </a>
-                            <Button
-                              variant="ghost"
-                              className="text-red-700"
-                              onClick={() => {
-                                void (async () => {
-                                  const label = row.display_name?.trim() || "this profile";
-                                  const confirmed = await confirm({
-                                    title: "Delete profile?",
-                                    description: row.qr_id
-                                      ? `${label} will be removed and their QR (${row.qr_id.slice(0, 8)}…) will be detached so it can be reissued.`
-                                      : `${label} will be permanently removed from the directory.`,
-                                    confirmLabel: "Delete",
-                                    cancelLabel: "Cancel",
-                                    tone: "danger",
-                                  });
-                                  if (!confirmed) return;
-                                  deleteMutation.mutate(row.id);
-                                })();
-                              }}
-                              disabled={
-                                deleteMutation.isPending && deleteMutation.variables === row.id
-                              }
-                            >
-                              {deleteMutation.isPending && deleteMutation.variables === row.id
-                                ? "Deleting…"
-                                : "Delete"}
-                            </Button>
-                          </div>
-                        </td>
+            <>
+              <Card className="hidden p-0 sm:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-lg border-collapse text-left text-sm">
+                    <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
+                      <tr>
+                        <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                          Name
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                          Role
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                          QR
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                          Updated
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+                    </thead>
+                    <tbody>
+                      {query.data.map((row) => {
+                        const isDeleting =
+                          deleteMutation.isPending && deleteMutation.variables === row.id;
+                        return (
+                          <tr key={row.id} className="border-b border-(--bearhacks-border) last:border-0">
+                            <td className="px-3 py-3 text-(--bearhacks-fg)">{row.display_name ?? "—"}</td>
+                            <td className="px-3 py-3 text-(--bearhacks-muted)">{row.role ?? "—"}</td>
+                            <td className="px-3 py-3 font-mono text-xs text-(--bearhacks-muted)">
+                              {row.qr_id ? row.qr_id.slice(0, 8) + "…" : "—"}
+                            </td>
+                            <td className="px-3 py-3 text-(--bearhacks-muted)">
+                              {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Link
+                                  href={`/profiles/${row.id}`}
+                                  className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                                >
+                                  Edit
+                                </Link>
+                                <a
+                                  href={`${resolveMeBaseUrl()}/contacts/${row.id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                                >
+                                  View profile
+                                </a>
+                                <Button
+                                  variant="ghost"
+                                  className="text-red-700"
+                                  onClick={() => {
+                                    void (async () => {
+                                      const label = row.display_name?.trim() || "this profile";
+                                      const confirmed = await confirm({
+                                        title: "Delete profile?",
+                                        description: row.qr_id
+                                          ? `${label} will be removed and their QR (${row.qr_id.slice(0, 8)}…) will be detached so it can be reissued.`
+                                          : `${label} will be permanently removed from the directory.`,
+                                        confirmLabel: "Delete",
+                                        cancelLabel: "Cancel",
+                                        tone: "danger",
+                                      });
+                                      if (!confirmed) return;
+                                      deleteMutation.mutate(row.id);
+                                    })();
+                                  }}
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? "Deleting…" : "Delete"}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+
+              <ul className="flex flex-col gap-3 sm:hidden">
+                {query.data.map((row) => {
+                  const isDeleting =
+                    deleteMutation.isPending && deleteMutation.variables === row.id;
+                  return (
+                    <li key={row.id}>
+                      <Card className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-semibold text-(--bearhacks-fg) wrap-break-word">
+                            {row.display_name?.trim() || "Unnamed attendee"}
+                          </span>
+                          {row.role?.trim() ? (
+                            <span className="text-xs text-(--bearhacks-muted) wrap-break-word">
+                              {row.role}
+                            </span>
+                          ) : null}
+                        </div>
+                        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                          <dt className="font-mono uppercase tracking-wide text-(--bearhacks-muted)">QR</dt>
+                          <dd className="font-mono break-all text-(--bearhacks-fg)">
+                            {row.qr_id ? row.qr_id.slice(0, 8) + "…" : "—"}
+                          </dd>
+                          <dt className="font-mono uppercase tracking-wide text-(--bearhacks-muted)">Updated</dt>
+                          <dd className="text-(--bearhacks-fg)">
+                            {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
+                          </dd>
+                        </dl>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/profiles/${row.id}`}
+                            className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-4 py-2 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                          >
+                            Edit
+                          </Link>
+                          <a
+                            href={`${resolveMeBaseUrl()}/contacts/${row.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-4 py-2 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                          >
+                            View
+                          </a>
+                          <Button
+                            variant="ghost"
+                            className="text-red-700"
+                            onClick={() => {
+                              void (async () => {
+                                const label = row.display_name?.trim() || "this profile";
+                                const confirmed = await confirm({
+                                  title: "Delete profile?",
+                                  description: row.qr_id
+                                    ? `${label} will be removed and their QR (${row.qr_id.slice(0, 8)}…) will be detached so it can be reissued.`
+                                    : `${label} will be permanently removed from the directory.`,
+                                  confirmLabel: "Delete",
+                                  cancelLabel: "Cancel",
+                                  tone: "danger",
+                                });
+                                if (!confirmed) return;
+                                deleteMutation.mutate(row.id);
+                              })();
+                            }}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? "Deleting…" : "Delete"}
+                          </Button>
+                        </div>
+                      </Card>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </>
       )}

@@ -1049,12 +1049,12 @@ export default function AdminQrPage() {
       </main>
 
       {selectedQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
           <Card
             as="div"
-            className="max-h-[80vh] w-full max-w-2xl overflow-hidden p-0"
+            className="max-h-[92vh] w-full max-w-2xl overflow-hidden p-0 sm:max-h-[85vh]"
           >
-            <div className="flex items-center justify-between border-b border-(--bearhacks-border) px-4 py-3">
+            <div className="flex items-center justify-between gap-3 border-b border-(--bearhacks-border) px-3 py-3 sm:px-4">
               <CardTitle className="text-base">QR details</CardTitle>
               <Button
                 variant="ghost"
@@ -1071,8 +1071,8 @@ export default function AdminQrPage() {
                 Close
               </Button>
             </div>
-            <div className="max-h-[calc(80vh-60px)] overflow-auto p-4">
-              <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="max-h-[calc(92vh-56px)] overflow-auto p-3 sm:max-h-[calc(85vh-60px)] sm:p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
                 <span
                   className={`inline-flex w-fit rounded-full px-2 py-1 text-xs font-medium ${
                     selectedQr.claimed
@@ -1095,12 +1095,12 @@ export default function AdminQrPage() {
                     setShowQrPreview(next);
                   }}
                 >
-                  {showQrPreview ? "Hide QR preview" : "Show QR preview"}
+                  {showQrPreview ? "Hide QR" : "Show QR"}
                 </Button>
               </div>
               {showQrPreview ? (
-                <div className="mb-4 flex flex-col items-center gap-3 rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface-alt) p-4 sm:flex-row sm:items-start">
-                  <div className="flex h-44 w-44 shrink-0 items-center justify-center rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) bg-white p-2">
+                <div className="mb-3 flex flex-col items-center gap-3 rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) bg-(--bearhacks-surface-alt) p-3 sm:mb-4 sm:flex-row sm:items-start sm:p-4">
+                  <div className="flex h-36 w-36 shrink-0 items-center justify-center rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) bg-white p-2 sm:h-44 sm:w-44">
                     {selectedQrImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -1112,7 +1112,7 @@ export default function AdminQrPage() {
                       <span className="text-xs text-(--bearhacks-muted)">Rendering…</span>
                     )}
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-2 text-sm">
+                  <div className="flex w-full min-w-0 flex-1 flex-col gap-2 text-sm sm:w-auto">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.1rem] text-(--bearhacks-text-marketing)/70">
                         Encoded URL
@@ -1122,7 +1122,7 @@ export default function AdminQrPage() {
                           href={selectedClaimUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="block break-all font-mono text-xs text-(--bearhacks-primary) underline underline-offset-2"
+                          className="block break-all font-mono text-[11px] text-(--bearhacks-primary) underline underline-offset-2 sm:text-xs"
                         >
                           {selectedClaimUrl}
                         </a>
@@ -1142,36 +1142,58 @@ export default function AdminQrPage() {
                   </div>
                 </div>
               ) : null}
-              <table className="w-full border-collapse text-left text-sm">
-                <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
-                  <tr>
-                    <th scope="col" className="w-1/3 px-3 py-2 font-medium">
-                      Field
-                    </th>
-                    <th scope="col" className="px-3 py-2 font-medium">
-                      Value
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(selectedQr).map(([key, value]) => (
-                    <tr key={key} className="border-b border-(--bearhacks-border) last:border-0">
-                      <td className="px-3 py-2 font-mono text-xs text-(--bearhacks-muted)">{key}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-(--bearhacks-fg)">
-                        {value === null || value === undefined ? (
-                          "—"
-                        ) : typeof value === "object" ? (
-                          <pre className="whitespace-pre-wrap break-all rounded-(--bearhacks-radius-sm) bg-(--bearhacks-surface-alt) p-2 font-mono text-[11px]">
-                            {JSON.stringify(value, null, 2)}
-                          </pre>
-                        ) : (
-                          String(value)
-                        )}
-                      </td>
+              <dl className="flex flex-col divide-y divide-(--bearhacks-border) overflow-hidden rounded-(--bearhacks-radius-md) border border-(--bearhacks-border) sm:hidden">
+                {Object.entries(selectedQr).map(([key, value]) => (
+                  <div key={key} className="flex flex-col gap-1 bg-(--bearhacks-surface) px-3 py-2">
+                    <dt className="font-mono text-[11px] uppercase tracking-wide text-(--bearhacks-muted)">
+                      {key}
+                    </dt>
+                    <dd className="font-mono text-[12px] break-all text-(--bearhacks-fg)">
+                      {value === null || value === undefined ? (
+                        "—"
+                      ) : typeof value === "object" ? (
+                        <pre className="whitespace-pre-wrap break-all rounded-(--bearhacks-radius-sm) bg-(--bearhacks-surface-alt) p-2 text-[11px]">
+                          {JSON.stringify(value, null, 2)}
+                        </pre>
+                      ) : (
+                        String(value)
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="hidden sm:block">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="border-b border-(--bearhacks-border) bg-(--bearhacks-surface-alt)">
+                    <tr>
+                      <th scope="col" className="w-1/3 px-3 py-2 font-medium">
+                        Field
+                      </th>
+                      <th scope="col" className="px-3 py-2 font-medium">
+                        Value
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {Object.entries(selectedQr).map(([key, value]) => (
+                      <tr key={key} className="border-b border-(--bearhacks-border) last:border-0">
+                        <td className="px-3 py-2 font-mono text-xs text-(--bearhacks-muted)">{key}</td>
+                        <td className="px-3 py-2 font-mono text-xs break-all text-(--bearhacks-fg)">
+                          {value === null || value === undefined ? (
+                            "—"
+                          ) : typeof value === "object" ? (
+                            <pre className="whitespace-pre-wrap break-all rounded-(--bearhacks-radius-sm) bg-(--bearhacks-surface-alt) p-2 font-mono text-[11px]">
+                              {JSON.stringify(value, null, 2)}
+                            </pre>
+                          ) : (
+                            String(value)
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </Card>
         </div>
