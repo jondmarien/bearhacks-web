@@ -34,7 +34,7 @@ export function SiteHeader() {
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-(--bearhacks-on-primary) no-underline"
+          className="inline-flex shrink-0 items-center gap-2 text-(--bearhacks-on-primary) no-underline"
           aria-label="BearHacks 2026 home"
         >
           <Image
@@ -45,26 +45,26 @@ export function SiteHeader() {
             priority
             style={{ width: "28px", height: "auto" }}
           />
-          <span className="text-base font-semibold tracking-wide">
+          <span className="hidden text-base font-semibold tracking-wide sm:inline">
             BearHacks 2026
           </span>
         </Link>
-        <div className="flex min-w-0 items-center gap-2 text-xs uppercase tracking-widest text-(--bearhacks-accent-soft)">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-xs uppercase tracking-widest text-(--bearhacks-accent-soft)">
           {displayName && userId ? (
             <>
               <Link
                 href={`/contacts/${userId}`}
-                className="max-w-40 truncate font-bold text-(--bearhacks-accent) underline-offset-4 hover:underline sm:max-w-xs"
+                className="min-w-0 truncate font-bold text-(--bearhacks-accent) underline-offset-4 hover:underline"
                 title={`Signed in as ${displayName} — view my profile`}
               >
                 {displayName}
               </Link>
-              <span aria-hidden="true" className="text-(--bearhacks-accent-soft)/50">
+              <span aria-hidden="true" className="hidden text-(--bearhacks-accent-soft)/50 sm:inline">
                 |
               </span>
             </>
           ) : null}
-          <span>Networking</span>
+          <span className="hidden shrink-0 sm:inline">Networking</span>
         </div>
       </div>
     </header>
