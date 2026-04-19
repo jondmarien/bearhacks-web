@@ -3,7 +3,6 @@
 import { createLogger } from "@bearhacks/logger";
 import { toast } from "sonner";
 import { type DashboardOAuthProvider, useMeAuth } from "@/app/providers";
-import { Button } from "@/components/ui/button";
 
 const log = createLogger("me/dashboard-oauth-buttons");
 
@@ -28,11 +27,11 @@ export function DashboardOAuthButtons({ className }: DashboardOAuthButtonsProps)
   if (!auth) return null;
 
   return (
-    <div className={className ?? "flex flex-col items-center gap-3 sm:flex-row sm:justify-center"}>
+    <div className={className ?? "flex flex-col gap-2"}>
       {PROVIDERS.map(({ id, label }) => (
-        <Button
+        <button
           key={id}
-          variant="pill"
+          type="button"
           onClick={() => {
             void auth
               .signInWithDashboardProvider(id)
@@ -45,10 +44,10 @@ export function DashboardOAuthButtons({ className }: DashboardOAuthButtonsProps)
                 }
               });
           }}
-          className="w-full sm:w-auto"
+          className="min-h-(--bearhacks-touch-min) w-full cursor-pointer rounded-(--bearhacks-radius-sm) border border-(--bearhacks-border) bg-(--bearhacks-bg) px-4 text-sm font-medium text-(--bearhacks-fg) sm:w-auto"
         >
           {label}
-        </Button>
+        </button>
       ))}
     </div>
   );
