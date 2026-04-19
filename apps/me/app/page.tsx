@@ -154,10 +154,10 @@ export default function HomePage() {
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-4 py-10">
         <section className="flex flex-col items-center text-center">
           <Image
-            src="/brand/logo_long.svg"
+            src="/brand/wordmark_hero.webp"
             alt="BearHacks 2026"
-            width={320}
-            height={80}
+            width={738}
+            height={220}
             priority
             className="w-64 sm:w-80"
             style={{ height: "auto" }}
@@ -190,11 +190,11 @@ export default function HomePage() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-(--bearhacks-primary)">
+          <h1 className="text-2xl font-extrabold uppercase tracking-[0.15rem] text-(--bearhacks-text-marketing) sm:text-3xl">
             Welcome back
           </h1>
           {user?.email ? (
-            <p className="text-sm text-(--bearhacks-muted)">{user.email}</p>
+            <p className="text-sm text-(--bearhacks-text-marketing)/70">{user.email}</p>
           ) : null}
         </div>
         <div className="flex gap-2">
@@ -307,14 +307,16 @@ export default function HomePage() {
       {qrId ? (
         <Card>
           <CardHeader>
-            <CardTitle>My QR card</CardTitle>
+            <CardTitle>
+              My <span className="bg-(--bearhacks-cream) px-1 rounded-sm">QR card</span>
+            </CardTitle>
             <CardDescription>
               Show this QR to other attendees to share your profile.
             </CardDescription>
           </CardHeader>
           <Link
             href={`/qr-card/${qrId}`}
-            className="inline-flex min-h-(--bearhacks-touch-min) w-fit items-center rounded-(--bearhacks-radius-md) bg-(--bearhacks-accent) px-4 text-sm font-semibold text-(--bearhacks-primary) no-underline hover:bg-(--bearhacks-accent-soft)"
+            className="inline-flex min-h-(--bearhacks-touch-min) w-fit items-center rounded-(--bearhacks-radius-pill) bg-(--bearhacks-accent) px-6 text-sm font-semibold text-(--bearhacks-primary) no-underline hover:bg-(--bearhacks-accent-soft)"
           >
             Open my QR card →
           </Link>

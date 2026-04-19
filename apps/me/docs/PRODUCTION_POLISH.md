@@ -1,10 +1,10 @@
-# BearHacks 2026 — `apps/me` Production Polish
+# BearHacks 2026 ? `apps/me` Production Polish
 
 > Change record for the participant portal upgrade from PoC to production.
 > Date: 2026-04-18.
 > Source plan: `me-portal-production-polish_0f02d1ad`.
 > Source requirements: dev-team Discord chat (Aleks, Jon, Vega, Yves).
-> Sister doc: [apps/admin/docs/PRODUCTION_POLISH.md](../../admin/docs/PRODUCTION_POLISH.md) — the matching staff-portal changelog.
+> Sister doc: [apps/admin/docs/PRODUCTION_POLISH.md](../../admin/docs/PRODUCTION_POLISH.md) ? the matching staff-portal changelog.
 
 ---
 
@@ -14,12 +14,12 @@ The participant portal (`bearhacks-web/apps/me`) was lifted from a developer-fac
 PoC into a production-ready event experience. Three things changed at once:
 
 1. **Surface area shrank.** Wallet flows, scan/favourite debug forms, the Discord
-   join CTA, and the “Signed in as `<email>` via OAuth” debug strip were removed.
+   join CTA, and the ?Signed in as `<email>` via OAuth? debug strip were removed.
 2. **Brand identity arrived.** The portal now matches the `bearhacks-frontend/2026`
    palette and logo set, with shared `Card`, `Button`, `Field`, `PageHeader`,
    `SiteHeader`, and `SiteFooter` primitives wired to design tokens.
 3. **Access policy flipped.** Profile creation no longer requires being on the
-   accepted-hacker allowlist — anyone with a Google or LinkedIn login can build a
+   accepted-hacker allowlist ? anyone with a Google or LinkedIn login can build a
    profile. The lanyard check moved to the in-person QR claim table.
 
 A new optional `personal_url` (portfolio link) field flows end-to-end from the
@@ -52,10 +52,10 @@ flowchart LR
 ```mermaid
 flowchart TB
   subgraph Client["apps/me (Next.js 16, React 19)"]
-    Layout["app/layout.tsx<br/>SiteHeader · SiteFooter · metadata"]
+    Layout["app/layout.tsx<br/>SiteHeader ? SiteFooter ? metadata"]
     Providers["app/providers.tsx<br/>Supabase + React Query + Auth context"]
     Pages["Pages: /, /contacts/[id], /claim/[qrId], /qr-card/[qrId], not-found, error"]
-    UI["components/ui/*<br/>Button · Card · Field · PageHeader"]
+    UI["components/ui/*<br/>Button ? Card ? Field ? PageHeader"]
     Brand["public/brand/*.svg"]
     Pages --> UI
     Layout --> Brand
@@ -68,12 +68,12 @@ flowchart TB
 
   subgraph Backend["bearhacks-backend (FastAPI)"]
     ProfilesRouter["routers/profiles.py<br/>PATCH /profiles/me uses require_auth"]
-    ClaimRouter["routers/claim.py<br/>QR claim — unchanged"]
+    ClaimRouter["routers/claim.py<br/>QR claim ? unchanged"]
   end
 
   subgraph Supabase["Supabase"]
     Auth["Auth (Google, LinkedIn, Discord)"]
-    DB[("Postgres<br/>profiles.personal_url ✨")]
+    DB[("Postgres<br/>profiles.personal_url ?")]
   end
 
   Client -->|Tailwind classes| Tokens
@@ -138,7 +138,7 @@ id, qr_id, display_name, bio, linkedin_url, github_url, role, updated_at, person
 
 Updated `routers/profiles.py` header to document the relaxed access policy:
 
-> `PATCH /profiles/me` — any authenticated Supabase user updates their own row
+> `PATCH /profiles/me` ? any authenticated Supabase user updates their own row
 > (`sub`). No accepted-hacker gate: lanyard check at the QR-claim table is the
 > in-person filter.
 
@@ -175,9 +175,9 @@ Added semantic brand surfaces on top of the existing 2026 palette:
 
 Copied into `apps/me/public/brand/`:
 
-- `icon_black.svg` — favicon, in-card brand mark.
-- `icon_white.svg` — header logo on dark-blue chrome.
-- `logo_long.svg` — signed-out hero.
+- `icon_black.svg` ? favicon, in-card brand mark.
+- `icon_white.svg` ? header logo on dark-blue chrome.
+- `logo_long.svg` ? signed-out hero.
 
 ### 5.4 Layout chrome
 
@@ -197,28 +197,28 @@ viewport thanks to `min-h-full flex flex-col`.
 - Wraps `{children}` in `<SiteHeader />` and `<SiteFooter />`.
 - Body uses the new `--bearhacks-surface-alt` page background.
 
-### 6.2 `app/page.tsx` (home — biggest rewrite)
+### 6.2 `app/page.tsx` (home ? biggest rewrite)
 
 **Signed-out state:**
 
 ```mermaid
 flowchart TB
   Hero["Logo + 'BearHacks 2026 Networking'<br/>'Sign in to create a networking profile and claim a QR code.'"]
-  CTA["Card: DashboardOAuthButtons<br/>Google · LinkedIn"]
+  CTA["Card: DashboardOAuthButtons<br/>Google ? LinkedIn"]
   Hero --> CTA
 ```
 
 - Removed the **Join BearHacks 2026 (Discord)** section.
-- Removed the “After you sign in, we'll send you back to your link.” copy.
+- Removed the ?After you sign in, we'll send you back to your link.? copy.
 
 **Signed-in state:**
 
 - Header: a small welcome row with **My profile** link + **Sign out** ghost button.
 - **My profile** card with the new `personal_url` field.
-- **My QR card** (only when `qr_id` exists) — links to `/qr-card/[qrId]`.
+- **My QR card** (only when `qr_id` exists) ? links to `/qr-card/[qrId]`.
 - Removed: wallet passes, wallet export, scan/favourite forms, scanned contacts
   list, favourites list, and the `Signed in as <email> via OAuth` debug strip.
-- On save → `router.push('/contacts/' + userId)`.
+- On save ? `router.push('/contacts/' + userId)`.
 
 ### 6.3 `app/contacts/[id]/page.tsx`
 
@@ -232,7 +232,7 @@ flowchart TB
 
 - New copy: "Confirm your details to link this QR code to your account."
 - `personal_url` added to the form (optional).
-- Already-claimed state is now a branded `Card` with a "View profile →" CTA.
+- Already-claimed state is now a branded `Card` with a "View profile ?" CTA.
 - Required fields kept: `display_name`, `role`.
 
 ### 6.5 `app/qr-card/[qrId]/page.tsx`
@@ -259,7 +259,7 @@ Branded `Card`-based boundary with **Try again** + **Go home**, logging via
 
 - Removed `checkPortalAccess` import + usage from `runPortalFlow`.
 - `EmailClaimModal` stays mounted but never opens.
-- **Full Discord auto-sync removal** (post-launch follow-up — see §6.9):
+- **Full Discord auto-sync removal** (post-launch follow-up ? see ?6.9):
   - Deleted `apps/me/lib/sync-discord-guild.ts` and `apps/me/lib/auth-session.ts`.
   - Removed `trySyncDiscordGuild(supabase)` and the surrounding
     `if (isDiscordBackedUser(user))` branch from `runPortalFlow`.
@@ -296,7 +296,7 @@ profile { error: '[object Error]' }` because `connect-src` blocked
 
 `apps/me/.env.local` was flipped from `https://api.bearhacks.com` to
 `http://127.0.0.1:8000` so local dev exercises the local backend. **This must
-be reverted to `https://api.bearhacks.com` before any deploy** — the value is
+be reverted to `https://api.bearhacks.com` before any deploy** ? the value is
 bundled at startup (Next.js `NEXT_PUBLIC_*` semantics), so a `bun dev:me`
 restart is required after toggling it.
 
@@ -307,16 +307,16 @@ a matching height (or vice versa). Each call now passes
 `style={{ width: "...", height: "auto" }}` (or `height: "auto"` only) to keep
 the intrinsic aspect ratio. Files touched:
 
-- `components/site-header.tsx` — `icon_white.svg`.
-- `app/page.tsx` — `logo_long.svg` (signed-out hero).
-- `app/not-found.tsx` — `icon_black.svg`.
-- `app/qr-card/[qrId]/page.tsx` — `icon_black.svg`.
+- `components/site-header.tsx` ? `icon_white.svg`.
+- `app/page.tsx` ? `logo_long.svg` (signed-out hero).
+- `app/not-found.tsx` ? `icon_black.svg`.
+- `app/qr-card/[qrId]/page.tsx` ? `icon_black.svg`.
 
 ### 6.9.4 Full Discord auto-sync removal
 
 Per the founder's chat ("we shouldn't be syncing the Discord guild anymore"),
 the residual `[me/discord-guild] Discord guild sync failed` console noise was
-removed at the source. Details are folded into §6.8 above (deleted helper
+removed at the source. Details are folded into ?6.8 above (deleted helper
 files, removed context method, removed `runPortalFlow` call site).
 
 ---
@@ -325,44 +325,44 @@ files, removed context method, removed `runPortalFlow` call site).
 
 ```
 bearhacks-backend/
-├── routers/profiles.py                                         (modified)
-└── supabase/migrations/
-    └── 20260418120000_add_profiles_personal_url.sql            (new)
+??? routers/profiles.py                                         (modified)
+??? supabase/migrations/
+    ??? 20260418120000_add_profiles_personal_url.sql            (new)
 
 bearhacks-web/
-├── packages/config/src/tokens.css                              (modified)
-└── apps/me/
-    ├── app/
-    │   ├── layout.tsx                                          (modified)
-    │   ├── page.tsx                                            (rewritten; aspect-ratio style on logo_long)
-    │   ├── providers.tsx                                       (modified; Discord auto-sync removed)
-    │   ├── error.tsx                                           (new)
-    │   ├── not-found.tsx                                       (new; aspect-ratio style on icon_black)
-    │   ├── contacts/[id]/page.tsx                              (rewritten)
-    │   ├── claim/[qrId]/page.tsx                               (rewritten)
-    │   └── qr-card/[qrId]/page.tsx                             (rewritten; aspect-ratio style on icon_black)
-    ├── components/
-    │   ├── site-header.tsx                                     (new; aspect-ratio style on icon_white)
-    │   ├── site-footer.tsx                                     (new)
-    │   └── ui/
-    │       ├── button.tsx                                      (new)
-    │       ├── card.tsx                                        (new)
-    │       ├── field.tsx                                       (new)
-    │       └── page-header.tsx                                 (new)
-    ├── lib/
-    │   ├── sync-discord-guild.ts                               (deleted — post-launch)
-    │   └── auth-session.ts                                     (deleted — post-launch)
-    ├── public/brand/
-    │   ├── icon_black.svg                                      (new, copied)
-    │   ├── icon_white.svg                                      (new, copied)
-    │   └── logo_long.svg                                       (new, copied)
-    ├── next.config.ts                                          (modified — dev CSP for 127.0.0.1:8000)
-    └── .env.local                                              (modified — local API URL for dev; revert before deploy)
+??? packages/config/src/tokens.css                              (modified)
+??? apps/me/
+    ??? app/
+    ?   ??? layout.tsx                                          (modified)
+    ?   ??? page.tsx                                            (rewritten; aspect-ratio style on logo_long)
+    ?   ??? providers.tsx                                       (modified; Discord auto-sync removed)
+    ?   ??? error.tsx                                           (new)
+    ?   ??? not-found.tsx                                       (new; aspect-ratio style on icon_black)
+    ?   ??? contacts/[id]/page.tsx                              (rewritten)
+    ?   ??? claim/[qrId]/page.tsx                               (rewritten)
+    ?   ??? qr-card/[qrId]/page.tsx                             (rewritten; aspect-ratio style on icon_black)
+    ??? components/
+    ?   ??? site-header.tsx                                     (new; aspect-ratio style on icon_white)
+    ?   ??? site-footer.tsx                                     (new)
+    ?   ??? ui/
+    ?       ??? button.tsx                                      (new)
+    ?       ??? card.tsx                                        (new)
+    ?       ??? field.tsx                                       (new)
+    ?       ??? page-header.tsx                                 (new)
+    ??? lib/
+    ?   ??? sync-discord-guild.ts                               (deleted ? post-launch)
+    ?   ??? auth-session.ts                                     (deleted ? post-launch)
+    ??? public/brand/
+    ?   ??? icon_black.svg                                      (new, copied)
+    ?   ??? icon_white.svg                                      (new, copied)
+    ?   ??? logo_long.svg                                       (new, copied)
+    ??? next.config.ts                                          (modified ? dev CSP for 127.0.0.1:8000)
+    ??? .env.local                                              (modified ? local API URL for dev; revert before deploy)
 ```
 
 ---
 
-## 8. Founder asks → mapping
+## 8. Founder asks ? mapping
 
 | Founder ask (chat)                                                                                | Where it landed                                                          |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -382,27 +382,169 @@ bearhacks-web/
 
 | Check                                                                              | Result   |
 | ---------------------------------------------------------------------------------- | -------- |
-| `bun typecheck` (`apps/me` + `apps/admin`)                                         | ✅ Clean |
-| `bun lint` (`apps/me` + `apps/admin`)                                              | ✅ Clean |
-| Supabase MCP `apply_migration` — `add_profiles_personal_url`                       | ✅ Applied |
-| Supabase MCP `execute_sql` — `personal_url text` present on `public.profiles`      | ✅ Confirmed |
+| `bun typecheck` (`apps/me` + `apps/admin`)                                         | ? Clean |
+| `bun lint` (`apps/me` + `apps/admin`)                                              | ? Clean |
+| Supabase MCP `apply_migration` ? `add_profiles_personal_url`                       | ? Applied |
+| Supabase MCP `execute_sql` ? `personal_url text` present on `public.profiles`      | ? Confirmed |
 
 ### Manual smoke checklist
 
-1. Anonymous → `/` shows the new hero, only OAuth buttons, no Discord JOIN, no debug copy.
-2. Sign in with Google → `/profiles/me` PATCH succeeds for an email **not** on the accepted hackers list.
-3. Save profile (with `personal_url`) → redirects to `/contacts/{me.id}`; back arrow returns to `/`.
-4. `/some-bogus-url` → branded 404 with the founder's copy.
-5. `/qr-card/{qrId}` → no wallet copy; QR renders with brand chrome.
-6. `/claim/{qrId}` (unclaimed) → can claim; (claimed) → branded card linking to owner profile.
-7. Tap targets ≥ 44px (enforced by `--bearhacks-touch-min`); contrast ≥ AA on dark-blue/orange palette.
+1. Anonymous ? `/` shows the new hero, only OAuth buttons, no Discord JOIN, no debug copy.
+2. Sign in with Google ? `/profiles/me` PATCH succeeds for an email **not** on the accepted hackers list.
+3. Save profile (with `personal_url`) ? redirects to `/contacts/{me.id}`; back arrow returns to `/`.
+4. `/some-bogus-url` ? branded 404 with the founder's copy.
+5. `/qr-card/{qrId}` ? no wallet copy; QR renders with brand chrome.
+6. `/claim/{qrId}` (unclaimed) ? can claim; (claimed) ? branded card linking to owner profile.
+7. Tap targets ? 44px (enforced by `--bearhacks-touch-min`); contrast ? AA on dark-blue/orange palette.
 
 ---
 
 ## 10. Out of scope (intentional non-goals)
 
-- `apps/admin` portal — covered separately in
+- `apps/admin` portal ? covered separately in
   [apps/admin/docs/PRODUCTION_POLISH.md](../../admin/docs/PRODUCTION_POLISH.md).
-- Wallet (Google/Apple) flows — descoped by Aleks.
-- Hardware QR scanner UX — out of browser scope.
+- Wallet (Google/Apple) flows ? descoped by Aleks.
+- Hardware QR scanner UX ? out of browser scope.
 - Visual redesign of the email-claim modal (kept mounted but never triggered).
+
+
+---
+
+## 12. Visual alignment with bearhacks.com (2026)
+
+Date: 2026-04-18 (follow-up pass on top of ?1-?11). Source of truth for the
+design language: `bearhacks-frontend/2026` (the public marketing site).
+
+> **Live scope.** The full marketing-style signed-out hero (sky?cream gradient,
+> watercolor clouds, cloud-bear mascots, pill OAuth CTAs) is **parked on
+> `feat/potential-ui`** and is NOT shipped to `me.bearhacks.com` in this PR.
+> Live keeps the original sign-in card layout but swaps the gitbear icon for
+> the watercolor `wordmark_hero.webp`. Everything else in ?12 (footer,
+> signed-in home, internal pages, not-found, contacts/[id]) ships live.
+
+**Goal.** Make `apps/me` feel like the same product family as bearhacks.com:
+same watercolor brand, same Hanken Grotesk + brown-type voice, same
+cream/sky/orange surfaces, same pill CTAs.
+
+**Non-goals.** No functional changes. Auth, API calls, React Query, role gates,
+structured logging, profile schema, and claim / QR-card behavior all stay
+bit-for-bit identical. Forms remain dense and readable (no playful styling on
+inputs). `apps/admin` is out of scope for this round.
+
+### 12.1 Design tokens added (shared)
+
+[`packages/config/src/tokens.css`](../../../packages/config/src/tokens.css) ?
+purely additive, both portals consume:
+
+```css
+--bearhacks-cream: #fff4cf;            /* "dinner" surface on the public site */
+--bearhacks-sky-from: #cee5ff;         /* hero gradient top */
+--bearhacks-text-marketing: #512b10;   /* brown body type for marketing surfaces */
+--bearhacks-radius-pill: 3.125rem;     /* hero / marketing CTAs */
+```
+
+The existing `--bearhacks-fg` (`#1a1a1a`) stays the form default so input
+contrast isn't disturbed. `--bearhacks-text-marketing` is opt-in per surface.
+
+### 12.2 Asset copy
+
+Copied from `bearhacks-frontend/2026/src/assets/images/` into
+`apps/me/public/brand/`:
+
+| Source                                       | Destination                  |
+| -------------------------------------------- | ---------------------------- |
+| `art/art_hero_title_opt.webp`                | `wordmark_hero.webp`         |
+| `art/art_hero_1.webp`                        | `bear_cloud_left.webp`       |
+| `art/art_hero_2.webp`                        | `bear_cloud_right.webp`      |
+| `art/art_redirect.webp`                      | `bear_redirect.webp`         |
+| `art/art_final_message.webp`                 | `bear_walking.webp`          |
+| `art/art_last_year_bee.webp`                 | `bee.webp`                   |
+| `art/art_footer.webp`                        | `bear_footer.webp`           |
+| `art/wooden_frame.svg`                       | `wooden_frame.svg`           |
+| `logos/logo_icon.svg`                        | `icon_color.svg`             |
+
+### 12.3 New building blocks
+
+- **`apps/me/components/decorative/clouds.tsx`** ? pure-SVG component that
+  renders two large white watercolor clouds (the same path data + `feTurbulence`
+  noise filter from `bearhacks-frontend/2026/src/components/sections/HeroSection.jsx`),
+  positioned absolute inside a `relative` parent. `aria-hidden`, no JS, no state.
+  Used on the signed-out home and the not-found page.
+- **`pill` button variant** in [`components/ui/button.tsx`](../components/ui/button.tsx) ?
+  `rounded-[var(--bearhacks-radius-pill)]`, white background, thin black/50
+  border, soft shadow, cream hover. Existing `primary | secondary | ghost`
+  variants unchanged. Used for the hero OAuth CTAs and the not-found "Go home".
+- **`tone="marketing"` on `PageHeader`** ? opt-in switch that renders the title
+  as `font-extrabold uppercase tracking-[0.15rem] text-(--bearhacks-text-marketing)`
+  instead of the default dark-blue tracking-tight. Default `tone` is unchanged.
+- **Inline cream highlight pattern** ?
+  `<span className="bg-(--bearhacks-cream) px-1 rounded-sm">?</span>`. Used as a
+  one-off accent on the signed-in home's "QR card" CardTitle. No helper
+  component (it's a one-className utility ? abstracting it isn't worth it).
+
+### 12.4 Page-by-page deltas
+
+- **Signed-out `/`** ([`app/page.tsx`](../app/page.tsx) `!userId` branch) ?
+  on **live**: original layout (centered "Sign in to continue" Card with
+  native Google / LinkedIn buttons), but the wordmark above the heading is
+  swapped from the gitbear `icon_black.svg` for the watercolor
+  `wordmark_hero.webp`. The full marketing hero (sky-to-cream gradient,
+  `<Clouds />`, cloud-bears, pill OAuth CTAs) lives on `feat/potential-ui`
+  for a future merge. Site header still renders as branded
+  chrome above the gradient (intentional ? no layout.tsx changes).
+- **Signed-in `/`** (same file, main return) ? light typography pass only.
+  "Welcome back" greeting becomes brown uppercase tracking-wide. "My QR card"
+  CardTitle picks up the cream highlight on the keyword. "Open my QR card ?"
+  CTA is now pill-rounded. Form rendering, validation, save flow unchanged.
+- **`/contacts/[id]`** ([`app/contacts/[id]/page.tsx`](../app/contacts/[id]/page.tsx)) ?
+  `PageHeader tone="marketing"`, display name as `text-2xl font-extrabold`
+  brown, role label uppercase tracking. No layout shifts.
+- **`/claim/[qrId]`** ([`app/claim/[qrId]/page.tsx`](../app/claim/[qrId]/page.tsx)) ?
+  the **already-claimed** Card switches to cream with a brown bottom border
+  (mirrors the FAQ card pattern from the public site). "View profile ?" CTA is
+  a pill. The form Card stays white for legibility.
+- **`/qr-card/[qrId]`** ([`app/qr-card/[qrId]/page.tsx`](../app/qr-card/[qrId]/page.tsx)) ?
+  page background tinted cream to mimic a printed event card. The QR image is
+  wrapped in a container that uses `wooden_frame.svg` as a CSS background,
+  decorative only (the QR itself is on a clean white inner panel so it still
+  scans). Owner name + role rendered in brown-type below.
+- **`/some-bogus-url`** ([`app/not-found.tsx`](../app/not-found.tsx)) ? replaces
+  the icon with `bear_redirect.webp`, adds a low-opacity `<Clouds />` layer,
+  cream page background, brown headline, pill "Go home" CTA.
+- **Site footer** ([`components/site-footer.tsx`](../components/site-footer.tsx)) ?
+  cream background, `bear_footer.webp` inline next to the copy line, brown
+  uppercase tracking text.
+
+### 12.5 What stayed unchanged (intentional)
+
+- Site header (`components/site-header.tsx`) ? dark-blue chrome with the white
+  icon already reads as on-brand. Switching to a floating pill nav would touch
+  every signed-in page and is outside Medium scope.
+- `<InputField>` / `<TextareaField>` ? no decorative styling. Forms stay
+  contrast-first.
+- `apps/admin` ? staff console keeps its current branded chrome.
+- All API surfaces, React Query keys, structured logging, and Supabase auth.
+
+### 12.6 Verification
+
+| Check                                           | Result   |
+| ----------------------------------------------- | -------- |
+| `bun lint` (`apps/me` + `apps/admin`)           | ? Clean |
+| `bun typecheck` (`apps/me` + `apps/admin`)      | ? Clean |
+| Cream `#FFF4CF` on brown `#512B10` contrast     | ? ~12:1, well above AA |
+
+Manual smoke (against `http://127.0.0.1:8000`):
+1. Signed-out `/` ? watercolor `wordmark_hero.webp` above the original
+   "BearHacks 2026 Networking" heading and "Sign in to continue" card with
+   native Google / LinkedIn buttons (full marketing hero parked on
+   `feat/potential-ui`).
+2. Sign in ? signed-in home renders with brown headings, cream highlight on
+   "QR card", pill "Open my QR card" CTA. Profile save still redirects to
+   `/contacts/{me.id}`.
+3. `/contacts/{me.id}` ? brown typography, layout intact.
+4. `/claim/{claimedQrId}` ? cream already-claimed card + pill "View profile" CTA;
+   `/claim/{unclaimedQrId}` ? form still readable, can claim.
+5. `/qr-card/{qrId}` ? cream page, wooden frame around QR, QR still scans on a
+   phone.
+6. `/some-bogus-url` ? redirect bear + low-opacity clouds + pill CTA.
+7. `apps/admin` portal opened side-by-side ? visually unchanged.
