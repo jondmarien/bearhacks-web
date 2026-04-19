@@ -18,6 +18,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { InputField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { useApiClient } from "@/lib/use-api-client";
+import { resolveMeBaseUrl } from "@/lib/me-base-url";
 import { isStaffUser, isSuperAdminUser } from "@/lib/supabase-role";
 
 export type AdminProfileListRow = {
@@ -165,12 +166,22 @@ export default function AdminProfilesPage() {
                           {row.updated_at ? new Date(row.updated_at).toLocaleString() : "—"}
                         </td>
                         <td className="px-3 py-3">
-                          <Link
-                            href={`/profiles/${row.id}`}
-                            className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
-                          >
-                            Edit
-                          </Link>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              href={`/profiles/${row.id}`}
+                              className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                            >
+                              Edit
+                            </Link>
+                            <a
+                              href={`${resolveMeBaseUrl()}/contacts/${row.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex min-h-(--bearhacks-touch-min) items-center justify-center rounded-(--bearhacks-radius-pill) border border-black/50 bg-white px-6 py-3 text-sm font-semibold text-black no-underline shadow-[0_1px_4px_0_rgba(0,0,0,0.25)] hover:bg-(--bearhacks-cream)"
+                            >
+                              View profile
+                            </a>
+                          </div>
                         </td>
                       </tr>
                     ))}

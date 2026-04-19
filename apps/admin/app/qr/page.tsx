@@ -18,6 +18,7 @@ import {
   type StructuredLogEntry,
 } from "@/lib/structured-logging";
 import { useApiClient } from "@/lib/use-api-client";
+import { resolveMeBaseUrl } from "@/lib/me-base-url";
 import { isStaffUser } from "@/lib/supabase-role";
 
 type QrRow = {
@@ -57,21 +58,6 @@ type PrinterStatusResponse = {
 };
 
 const log = createStructuredLogger("admin/qr-dashboard");
-
-function resolveMeBaseUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_ME_URL;
-  if (fromEnv && fromEnv.trim()) return fromEnv.replace(/\/$/, "");
-  if (typeof window !== "undefined") {
-    const { origin } = window.location;
-    if (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1")) {
-      return "http://localhost:3000";
-    }
-    if (origin.includes("admin.")) {
-      return origin.replace("admin.", "me.");
-    }
-  }
-  return "https://me.bearhacks.com";
-}
 
 export default function AdminQrPage() {
   const supabase = useSupabase();
