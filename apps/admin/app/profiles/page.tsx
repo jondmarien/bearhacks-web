@@ -7,7 +7,7 @@
  */
 
 import { ApiError } from "@bearhacks/api-client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useSupabase } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InputField } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { useApiClient } from "@/lib/use-api-client";
@@ -32,6 +33,7 @@ export type AdminProfileListRow = {
 export default function AdminProfilesPage() {
   const supabase = useSupabase();
   const client = useApiClient();
+  const confirm = useConfirm();
   const [user, setUser] = useState<User | null>(null);
   const [appliedSearch, setAppliedSearch] = useState("");
   const [draftSearch, setDraftSearch] = useState("");
@@ -70,6 +72,29 @@ export default function AdminProfilesPage() {
       toast.error("Failed to load profiles");
     }
   }, [query.error]);
+
+  const deleteMutation = useMutation({
+    mutationFn: (profileId: string) =>
+      client!.fetchJson<{ deleted: boolean; profile_id: string; detached_qr_id: string | null }>(
+        `/admin/profiles/${profileId}`,
+        { method: "DELETE" },
+      ),
+    onSuccess: (result) => {
+      toast.success(
+        result.detached_qr_id
+          ? `Deleted profile and detached QR ${result.detached_qr_id.slice(0, 8)}…`
+          : "Profile deleted",
+      );
+      void query.refetch();
+    },
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        toast.error(err.status === 403 ? "Super-admin access required." : err.message);
+      } else {
+        toast.error("Failed to delete profile");
+      }
+    },
+  });
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
@@ -150,7 +175,7 @@ export default function AdminProfilesPage() {
                         Updated
                       </th>
                       <th scope="col" className="px-3 py-3 font-medium text-(--bearhacks-fg)">
-                        <span className="sr-only">Actions</span>
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -181,6 +206,33 @@ export default function AdminProfilesPage() {
                             >
                               View profile
                             </a>
+                            <Button
+                              variant="ghost"
+                              className="text-red-700"
+                              onClick={() => {
+                                void (async () => {
+                                  const label = row.display_name?.trim() || "this profile";
+                                  const confirmed = await confirm({
+                                    title: "Delete profile?",
+                                    description: row.qr_id
+                                      ? `${label} will be removed and their QR (${row.qr_id.slice(0, 8)}…) will be detached so it can be reissued.`
+                                      : `${label} will be permanently removed from the directory.`,
+                                    confirmLabel: "Delete",
+                                    cancelLabel: "Cancel",
+                                    tone: "danger",
+                                  });
+                                  if (!confirmed) return;
+                                  deleteMutation.mutate(row.id);
+                                })();
+                              }}
+                              disabled={
+                                deleteMutation.isPending && deleteMutation.variables === row.id
+                              }
+                            >
+                              {deleteMutation.isPending && deleteMutation.variables === row.id
+                                ? "Deleting…"
+                                : "Delete"}
+                            </Button>
                           </div>
                         </td>
                       </tr>
